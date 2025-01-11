@@ -219,7 +219,8 @@ class _HomeScreenState extends State<HomeScreen> {
               color: Colors.black,
             ),
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 20),
+          const SizedBox(height: 20),
           Container(
             height: 180,
             width: 350,
@@ -279,13 +280,13 @@ class _HomeScreenState extends State<HomeScreen> {
                           customStyleBuilder: (context, local, global) {
                             if (global.position <= 0) {
                               return ToggleStyle(
-                                backgroundColor: Colors.red[800],
+                                backgroundColor: Colors.grey[300],
                               );
                             }
                             return ToggleStyle(
                                 backgroundGradient: LinearGradient(colors: [
                               Colors.green,
-                              Colors.red[800]!
+                              Colors.grey[300]!
                             ], stops: [
                               global.position -
                                   (1 - 2 * max(0, global.position - 0.5)) * 0.7,
@@ -308,20 +309,30 @@ class _HomeScreenState extends State<HomeScreen> {
                           iconBuilder: (value) => value
                               ? const Icon(
                                   Icons.autorenew,
-                                  color: Colors.green,
+                                  color: Colors.black,
                                   size: 22,
                                 )
-                              : Icon(
+                              : const Icon(
                                   Icons.block,
-                                  color: Colors.red[800],
+                                  color: Colors.black,
                                   size: 22,
                                 ),
                           textBuilder: (value) => value
                               ? const Center(
-                                  child: Text('Feed'),
+                                  child: Text(
+                                    'Feed',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                    ),
+                                  ),
                                 )
                               : const Center(
-                                  child: Text('Idle'),
+                                  child: Text(
+                                    'Idle',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                    ),
+                                  ),
                                 ),
                         ),
                       )),
@@ -391,7 +402,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     DefaultTextStyle.merge(
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: Colors.black,
                           fontSize: 13.0,
                           fontWeight: FontWeight.bold,
                         ),
@@ -412,13 +423,13 @@ class _HomeScreenState extends State<HomeScreen> {
                             customStyleBuilder: (context, local, global) {
                               if (global.position <= 0) {
                                 return ToggleStyle(
-                                  backgroundColor: Colors.red[800],
+                                  backgroundColor: Colors.grey[300],
                                 );
                               }
                               return ToggleStyle(
                                   backgroundGradient: LinearGradient(colors: [
                                 Colors.green,
-                                Colors.red[800]!
+                                Colors.grey[300]!
                               ], stops: [
                                 global.position -
                                     (1 - 2 * max(0, global.position - 0.5)) *
@@ -442,12 +453,12 @@ class _HomeScreenState extends State<HomeScreen> {
                             iconBuilder: (value) => value
                                 ? const Icon(
                                     Icons.power_settings_new_rounded,
-                                    color: Colors.green,
+                                    color: Colors.black,
                                     size: 22,
                                   )
-                                : Icon(
+                                : const Icon(
                                     Icons.power_settings_new_rounded,
-                                    color: Colors.red[800],
+                                    color: Colors.black,
                                     size: 22,
                                   ),
                             textBuilder: (value) => value
