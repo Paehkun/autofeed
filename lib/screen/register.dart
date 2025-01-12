@@ -29,6 +29,25 @@ class _RegisterState extends State<Register> {
       },
     );
 
+    if (nameController.text.isEmpty ||
+        phoneController.text.isEmpty ||
+        emailController.text.isEmpty ||
+        passwordController.text.isEmpty ||
+        confirmPasswordController.text.isEmpty) {
+      Navigator.pop(context);
+
+      showDialog(
+        context: context,
+        builder: (context) {
+          return const AlertDialog(
+            title: Text('Error'),
+            content: Text('Please fill in all the fields.'),
+          );
+        },
+      );
+      return; // Stop execution if fields are empty
+    }
+
     try {
       if (passwordController.text == confirmPasswordController.text) {
         // Create user with email and password

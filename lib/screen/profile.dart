@@ -175,7 +175,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await currentUser.delete();
 
       // Navigate to login screen or show confirmation dialog
-      Navigator.of(context).pushReplacementNamed('/login');
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const AuthPage()),
+      );
     } catch (e) {
       // Handle any errors
       ScaffoldMessenger.of(context).showSnackBar(
