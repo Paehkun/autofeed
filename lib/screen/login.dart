@@ -66,7 +66,7 @@ class _LoginState extends State<Login> {
         await FirebaseAuth.instance.signOut();
       } else {
         // Close the loading dialog
-        Navigator.pop(context);
+        //Navigator.pop(context);
 
         // Proceed to the home screen if email is verified
         Navigator.pushReplacement(
@@ -86,6 +86,15 @@ class _LoginState extends State<Login> {
         wrongEmailMessage();
       } else if (e.code == 'invalid-credential') {
         wrongPasswordMessage();
+      } else if (e.code == 'user-not-found') {
+        showDialog(
+          context: context,
+          builder: (context) {
+            return const AlertDialog(
+              title: Text('Email Not Found'),
+            );
+          },
+        );
       }
     }
   }

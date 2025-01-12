@@ -35,8 +35,6 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    print("HomePage built successfully!");
-
     return Scaffold(
       backgroundColor: Colors.grey[300],
       body: _pages[_selectedIndex],
@@ -204,7 +202,35 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             children: [
               IconButton(
-                onPressed: () => signUserOut(context),
+                onPressed: () {
+                  // Show confirmation dialog before logging out
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: const Text('Confirm Logout'),
+                        content:
+                            const Text('Are you sure you want to log out?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop(); // Close the dialog
+                            },
+                            child: const Text('No'),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              signUserOut(
+                                  context); // Call the sign out function
+                              Navigator.of(context).pop(); // Close the dialog
+                            },
+                            child: const Text('Yes'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
                 icon: const Icon(Icons.logout),
               ),
             ],
@@ -226,6 +252,14 @@ class _HomeScreenState extends State<HomeScreen> {
             width: 350,
             decoration: BoxDecoration(
               color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1), // Shadow color
+                  spreadRadius: 10, // Spread of the shadow
+                  blurRadius: 10, // How much the shadow is blurred
+                  offset: Offset(3, 5), // Position of the shadow (x, y)
+                ),
+              ],
               borderRadius: BorderRadius.circular(25),
             ),
             child: Column(
@@ -350,6 +384,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: 150,
                 decoration: BoxDecoration(
                   color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1), // Shadow color
+                      spreadRadius: 7, // Spread of the shadow
+                      blurRadius: 10, // How much the shadow is blurred
+                      offset: Offset(3, 5), // Position of the shadow (x, y)
+                    ),
+                  ],
                   borderRadius: BorderRadius.circular(25),
                 ),
                 child: Center(
@@ -379,6 +421,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: 150,
                 decoration: BoxDecoration(
                   color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1), // Shadow color
+                      spreadRadius: 7, // Spread of the shadow
+                      blurRadius: 10, // How much the shadow is blurred
+                      offset: Offset(3, 5), // Position of the shadow (x, y)
+                    ),
+                  ],
                   borderRadius: BorderRadius.circular(25),
                 ),
                 child: Column(

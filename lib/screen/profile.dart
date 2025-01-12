@@ -3,7 +3,8 @@ import 'dart:io'; // For using File class
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:image_picker/image_picker.dart'; // For image picking
+import 'package:image_picker/image_picker.dart';
+import 'auth_page.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -15,10 +16,15 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   String? name;
   String? email;
+  String? phone;
   String? profileImageBase64;
   bool isEditing = false;
 
   final TextEditingController nameController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController();
+  TextEditingController newPasswordController = TextEditingController();
+  TextEditingController confirmPasswordController = TextEditingController();
+
   final ImagePicker _picker = ImagePicker(); // ImagePicker instance
 
   @override
@@ -50,6 +56,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
       }
 
+      DataSnapshot phoneSnapshot = await userRef.child('phone').get();
+      if (phoneSnapshot.exists) {
+        setState(() {
+          phone = phoneSnapshot.value as String?;
+          phoneController.text = phone ?? '';
+        });
+      }
+
       // Fetch profile image
       DataSnapshot profileImageSnapshot =
           await userRef.child('profileImageBase64').get();
@@ -68,6 +82,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     DatabaseReference userRef =
         FirebaseDatabase.instance.ref('users/${currentUser.uid}');
 
+    // Update name if it has changed
     if (nameController.text.trim() != name) {
       await userRef.update({'name': nameController.text.trim()});
       setState(() {
@@ -79,11 +94,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
         isEditing = false;
       });
     }
+
+    if (phoneController.text.trim() != phone) {
+      await userRef.update({'phone': phoneController.text.trim()});
+      setState(() {
+        phone = phoneController.text.trim();
+        isEditing = false;
+      });
+    } else {
+      setState(() {
+        isEditing = false;
+      });
+    }
+
+    if (newPasswordController.text.isNotEmpty &&
+        confirmPasswordController.text.isNotEmpty) {
+      if (newPasswordController.text == confirmPasswordController.text) {
+        try {
+          await currentUser.updatePassword(newPasswordController.text);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Password updated successfully')),
+          );
+          setState(() {
+            isEditing = false; // Exit editing mode after a successful update
+          });
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error updating password: $e')),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Passwords do not match')),
+        );
+        setState(() {
+          isEditing = true;
+        });
+      }
+    }
   }
 
   Future<void> cancelChanges() async {
     setState(() {
       nameController.text = name ?? '';
+      phoneController.text = phone ?? '';
       isEditing = false;
     });
   }
@@ -130,10 +184,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  void signUserOut(BuildContext context) async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      // Navigate to the login screen after sign-out
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const AuthPage()),
+      );
+    } catch (e) {
+      print("Error logging out: $e");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[300],
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         title: const Text(
@@ -143,6 +210,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
             fontSize: 23.0,
             fontWeight: FontWeight.normal,
           ),
+        ),
+        leading: IconButton(
+          onPressed: () {
+            // Show confirmation dialog before logging out
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: const Text('Confirm Logout'),
+                  content: const Text('Are you sure you want to log out?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop(); // Close the dialog
+                      },
+                      child: const Text('No'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        signUserOut(context); // Call the sign out function
+                        Navigator.of(context).pop(); // Close the dialog
+                      },
+                      child: const Text('Yes'),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+          icon: const Icon(Icons.logout),
         ),
         centerTitle: true,
         elevation: 0,
@@ -171,7 +268,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 20.0),
+          const SizedBox(height: 40.0),
           if (isEditing)
             Column(
               children: [
@@ -183,30 +280,169 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 const SizedBox(height: 20.0),
+                TextField(
+                  controller: phoneController,
+                  decoration: const InputDecoration(
+                    labelText: 'Phone Number',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 20.0),
+                TextField(
+                  controller: newPasswordController,
+                  obscureText: true, // Hide the password text
+                  decoration: const InputDecoration(
+                    labelText: 'New Password',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 20.0),
+                TextField(
+                  controller: confirmPasswordController,
+                  obscureText: true, // Hide the password text
+                  decoration: const InputDecoration(
+                    labelText: 'Confirm New Password',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 20.0),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     ElevatedButton(
                       onPressed: cancelChanges,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
+                        backgroundColor: Colors.black,
+                        padding:
+                            EdgeInsets.zero, // Remove default button padding
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(9), // Rounded corners
+                        ),
                       ),
-                      child: const Text(
-                        'Cancel',
-                        style: TextStyle(
-                          color: Colors.black,
+                      child: SizedBox(
+                        width: 100, // Ensure sufficient width
+                        height: 50, // Ensure sufficient height
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 12,
+                              horizontal: 20), // Add padding around the text
+                          decoration: BoxDecoration(
+                            color: Colors.black,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Center(
+                            child: Text(
+                              'Cancel',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14.0, // Adjust font size as needed
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ),
                     ElevatedButton(
                       onPressed: saveChanges,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
+                        backgroundColor: Colors.black,
+                        padding:
+                            EdgeInsets.zero, // Remove default button padding
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(9), // Rounded corners
+                        ),
                       ),
-                      child: const Text(
-                        'Save',
-                        style: TextStyle(
-                          color: Colors.black,
+                      child: SizedBox(
+                        width: 100, // Ensure sufficient width
+                        height: 50, // Ensure sufficient height
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 12,
+                              horizontal: 20), // Add padding around the text
+                          decoration: BoxDecoration(
+                            color: Colors.black,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Center(
+                            child: Text(
+                              'Save',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14.0, // Adjust font size as needed
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 140.0),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Confirm Delete'),
+                            content: const Text(
+                                'Are you sure you want to delete your account? This action cannot be undone.'),
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.of(context)
+                                      .pop(); // Close the dialog
+                                },
+                                child: const Text('Cancel'),
+                              ),
+                              TextButton(
+                                onPressed: () async {
+                                  Navigator.of(context)
+                                      .pop(); // Close the dialog
+                                  await deleteAccount(); // Call the delete account function
+                                },
+                                child: const Text('Yes'),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        padding:
+                            EdgeInsets.zero, // Remove default button padding
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(9), // Rounded corners
+                        ),
+                      ),
+                      child: SizedBox(
+                        width: 160, // Ensure sufficient width
+                        height: 50, // Ensure sufficient height
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 12,
+                              horizontal: 20), // Add padding around the text
+                          decoration: BoxDecoration(
+                            color: Colors.black,
+                            borderRadius: BorderRadius.circular(9),
+                          ),
+                          child: const Center(
+                            child: Text(
+                              'Delete Account',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14.0, // Adjust font size as needed
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -215,18 +451,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
             )
           else
-            Column(
-              children: [
+            const SizedBox(height: 5.0),
+          if (!isEditing)
+            Divider(
+              color: Colors.grey[300],
+              thickness: 1,
+              height: 20,
+            ),
+          const SizedBox(height: 5.0),
+          Column(
+            children: [
+              if (!isEditing)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Name',
-                      style: TextStyle(
-                        fontSize: 18.0,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
+                    const Icon(
+                      Icons.account_box_rounded,
+                      color: Colors.black,
+                      size: 35.0,
                     ),
                     Text(
                       name ?? 'Loading...',
@@ -237,17 +479,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 20.0),
+              const SizedBox(height: 5.0),
+              if (!isEditing)
+                Divider(
+                  color: Colors.grey[300],
+                  thickness: 1,
+                  height: 20,
+                ),
+              const SizedBox(height: 5.0),
+              if (!isEditing)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Email',
-                      style: TextStyle(
+                    const Icon(
+                      Icons.local_phone_rounded,
+                      color: Colors.black,
+                      size: 35.0,
+                    ),
+                    Text(
+                      phone ?? 'Loading...',
+                      style: const TextStyle(
                         fontSize: 18.0,
-                        fontWeight: FontWeight.bold,
                         color: Colors.black,
                       ),
+                    ),
+                  ],
+                ),
+              const SizedBox(height: 5.0),
+              if (!isEditing)
+                Divider(
+                  color: Colors.grey[300],
+                  thickness: 1,
+                  height: 20,
+                ),
+              const SizedBox(height: 5.0),
+              if (!isEditing)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Icon(
+                      Icons.mail_rounded,
+                      color: Colors.black,
+                      size: 35.0,
                     ),
                     Text(
                       email ?? 'Loading...',
@@ -258,7 +531,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 20.0),
+              const SizedBox(height: 5.0),
+              if (!isEditing)
+                Divider(
+                  color: Colors.grey[300],
+                  thickness: 1,
+                  height: 20,
+                ),
+              const SizedBox(height: 5.0),
+              const SizedBox(height: 40.0),
+              if (!isEditing)
                 ElevatedButton(
                   onPressed: () {
                     setState(() {
@@ -266,54 +548,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     });
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                  ),
-                  child: const Text(
-                    'Edit Name',
-                    style: TextStyle(
-                      color: Colors.black,
+                    backgroundColor: Colors.black,
+                    padding: EdgeInsets.zero, // Remove default button padding
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(9), // Rounded corners
                     ),
                   ),
-                ),
-                const SizedBox(height: 20.0),
-                ElevatedButton(
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('Confirm Delete'),
-                        content: const Text(
-                            'Are you sure you want to delete your account? This action cannot be undone.'),
-                        actions: [
-                          TextButton(
-                            onPressed: () {
-                              Navigator.of(context).pop(); // Close the dialog
-                            },
-                            child: const Text('Cancel'),
-                          ),
-                          TextButton(
-                            onPressed: () async {
-                              Navigator.of(context).pop(); // Close the dialog
-                              await deleteAccount(); // Call the delete account function
-                            },
-                            child: const Text('Yes'),
-                          ),
-                        ],
+                  child: SizedBox(
+                    width: 160, // Ensure sufficient width
+                    height: 50, // Ensure sufficient height
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                          horizontal: 20), // Add padding around the text
+                      decoration: BoxDecoration(
+                        color: Colors.black,
+                        borderRadius: BorderRadius.circular(9),
                       ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                  ),
-                  child: const Text(
-                    'Delete Account',
-                    style: TextStyle(
-                      color: Colors.black,
+                      child: const Center(
+                        child: Text(
+                          'Edit Profile',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14.0, // Adjust font size as needed
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ],
-            ),
+              const SizedBox(height: 20.0),
+            ],
+          ),
         ],
       ),
     );

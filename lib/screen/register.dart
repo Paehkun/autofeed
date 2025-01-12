@@ -13,6 +13,7 @@ class Register extends StatefulWidget {
 
 class _RegisterState extends State<Register> {
   final nameController = TextEditingController();
+  final phoneController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
@@ -41,7 +42,8 @@ class _RegisterState extends State<Register> {
         await userCredential.user?.sendEmailVerification();
 
         // Save user data to Firebase Realtime Database
-        await saveUserData(userCredential.user!, nameController.text);
+        await saveUserData(
+            userCredential.user!, nameController.text, phoneController.text);
 
         // Sign out the user to force them back to the login screen
         await FirebaseAuth.instance.signOut();
@@ -91,12 +93,13 @@ class _RegisterState extends State<Register> {
     }
   }
 
-  Future<void> saveUserData(User user, String name) async {
+  Future<void> saveUserData(User user, String name, String phone) async {
     DatabaseReference userRef =
         FirebaseDatabase.instance.ref('users/${user.uid}');
     await userRef.set({
-      'foodLevel': 100, // Set initial food level
+      'foodLevel': 0, // Set initial food level
       'name': name, // Save the username
+      'phone': phone,
       'email': user.email,
     });
   }
@@ -177,6 +180,13 @@ class _RegisterState extends State<Register> {
                 Textfield(
                   controller: nameController,
                   hintText: 'Name',
+                  obsecureText: false,
+                ),
+                const SizedBox(height: 20),
+
+                Textfield(
+                  controller: phoneController,
+                  hintText: 'Phone Number',
                   obsecureText: false,
                 ),
                 const SizedBox(height: 20),
