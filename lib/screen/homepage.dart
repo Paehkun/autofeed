@@ -257,7 +257,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: Colors.black.withOpacity(0.1), // Shadow color
                   spreadRadius: 10, // Spread of the shadow
                   blurRadius: 10, // How much the shadow is blurred
-                  offset: Offset(3, 5), // Position of the shadow (x, y)
+                  offset: const Offset(3, 5), // Position of the shadow (x, y)
                 ),
               ],
               borderRadius: BorderRadius.circular(25),
@@ -389,7 +389,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: Colors.black.withOpacity(0.1), // Shadow color
                       spreadRadius: 7, // Spread of the shadow
                       blurRadius: 10, // How much the shadow is blurred
-                      offset: Offset(3, 5), // Position of the shadow (x, y)
+                      offset:
+                          const Offset(3, 5), // Position of the shadow (x, y)
                     ),
                   ],
                   borderRadius: BorderRadius.circular(25),
@@ -426,7 +427,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: Colors.black.withOpacity(0.1), // Shadow color
                       spreadRadius: 7, // Spread of the shadow
                       blurRadius: 10, // How much the shadow is blurred
-                      offset: Offset(3, 5), // Position of the shadow (x, y)
+                      offset:
+                          const Offset(3, 5), // Position of the shadow (x, y)
                     ),
                   ],
                   borderRadius: BorderRadius.circular(25),
