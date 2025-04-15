@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:auto_test/screen/FeedTimerPage.dart';
 import 'package:auto_test/screen/report.dart';
 import 'package:auto_test/screen/profile.dart';
+import 'package:awesome_notifications/awesome_notifications.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -77,6 +78,7 @@ class _HomeScreenState extends State<HomeScreen> {
     fetchname();
     fetchFeedSwitchState();
     fetchPowerSwitchState();
+    checkFoodLevel();
   }
 
   Future<void> fetchname() async {
@@ -174,6 +176,41 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     } else {
       print("User is not logged in");
+    }
+  }
+
+  void checkFoodLevel() {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      DatabaseReference feedRef =
+          FirebaseDatabase.instance.ref('users/${user.uid}/foodLevel');
+
+      feedRef.onValue.listen((event) {
+        if (event.snapshot.exists) {
+          String foodLevelString = event.snapshot.value.toString();
+          double foodLevel = double.tryParse(foodLevelString) ?? 0.0;
+
+          print("🔥 Food Level: $foodLevel"); // Debugging
+
+          if (foodLevel <= 20) {
+            print("🚨 Sending Low Food Level Notification...");
+            AwesomeNotifications().createNotification(
+              content: NotificationContent(
+                id: 1,
+                channelKey: 'basic_channel',
+                title: 'Food Level Is Low ⚠️',
+                body:
+                    'Your fish food is at ${foodLevel.toInt()}%. Please refill.',
+                notificationLayout: NotificationLayout.BigText,
+              ),
+            );
+          }
+        } else {
+          print("⚠️ No food level data found.");
+        }
+      });
+    } else {
+      print("❌ User is not logged in.");
     }
   }
 
