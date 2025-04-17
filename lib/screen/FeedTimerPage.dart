@@ -35,20 +35,26 @@ class _FeedTimerPageState extends State<FeedTimerPage> {
     if (_currentUser == null) return;
 
     final snapshot =
-        await _database.child("users/${_currentUser.uid}/schedule").get();
-    if (snapshot.exists) {
-      Map<dynamic, dynamic> schedules = snapshot.value as Map<dynamic, dynamic>;
-      setState(() {
-        _feedTimes = schedules.entries.map((entry) {
-          return {
-            'id': entry.key,
-            'time': entry.value['time'],
-            'enabled': entry.value['enabled'],
-            'days': List<String>.from(entry.value['days'] ?? []),
-          };
-        }).toList();
+        await _database.child("users/${_currentUser.uid}/schedule").once();
+    final data = snapshot.snapshot.value as Map?;
+
+    _feedTimes.clear();
+
+    if (data != null) {
+      data.forEach((key, value) {
+        _feedTimes.add({
+          'id': key, // Store the scheduleId (like 'timer1', 'timer2', etc.)
+          'days': (value['day'] as String)
+              .split(", ")
+              .where((d) => d.isNotEmpty)
+              .toList(),
+          'time': value['time'] ?? '',
+          'enabled': value['enabled'] ?? false,
+        });
       });
     }
+
+    if (mounted) setState(() {});
   }
 
   Future<void> _pickTime(BuildContext context, [int? index]) async {
@@ -109,43 +115,51 @@ class _FeedTimerPageState extends State<FeedTimerPage> {
   Future<void> _saveScheduleToFirebase(int index) async {
     if (_currentUser == null || _feedTimes.isEmpty) return;
 
-    String scheduleId = _database.push().key ??
-        DateTime.now().millisecondsSinceEpoch.toString();
-    _feedTimes[index]['id'] = scheduleId;
-
-    // Assuming each feed dispensing is 60 grams, you can adjust this value as needed.
-    // Example: Food dispensed each time
+    // Generate an ID — or use Firebase's push() for unique IDs
+    String scheduleId = 'timer${_feedTimes.length + 1}';
 
     await _database
         .child("users/${_currentUser.uid}/schedule/$scheduleId")
         .set({
+      'day': _feedTimes[index]['days'].join(", "),
       'time': _feedTimes[index]['time'],
       'enabled': _feedTimes[index]['enabled'],
-      'days': _feedTimes[index]['days'],
     });
+
+    // 💡 Save the ID locally for future updates
+    _feedTimes[index]['id'] = scheduleId;
   }
 
   Future<void> _updateScheduleToFirebase(int index) async {
     if (_currentUser == null || _feedTimes.isEmpty) return;
 
-    String scheduleId = _feedTimes[index]['id'];
+    String? scheduleId = _feedTimes[index]['id'];
+
+    // 🧠 Extra check to prevent null crash
+    if (scheduleId == null) return;
+
     await _database
         .child("users/${_currentUser.uid}/schedule/$scheduleId")
         .update({
+      'day': _feedTimes[index]['days'].join(", "),
       'time': _feedTimes[index]['time'],
       'enabled': _feedTimes[index]['enabled'],
-      'days': _feedTimes[index]['days'],
     });
   }
 
   Future<void> _deleteSchedule(int index) async {
     if (_currentUser == null || _feedTimes.isEmpty) return;
 
-    String scheduleId = _feedTimes[index]['id'];
+    String scheduleId =
+        'timer${index + 1}'; // This will match the timerX format
+
+    // Remove the schedule data from Firebase
     await _database
         .child("users/${_currentUser.uid}/schedule/$scheduleId")
         .remove();
 
+    if (!mounted) return;
+    // Remove the item from the list
     setState(() {
       _feedTimes.removeAt(index);
     });
@@ -167,7 +181,7 @@ class _FeedTimerPageState extends State<FeedTimerPage> {
             daysOfWeek: _daysOfWeek, selectedDays: selectedDays);
       },
     );
-
+    if (!mounted) return;
     if (result != null) {
       setState(() {
         _feedTimes[index]['days'] = result;
@@ -206,8 +220,12 @@ class _FeedTimerPageState extends State<FeedTimerPage> {
                     );
                   }
 
+                  // Sort the feedTimes by time string before rendering
+                  _feedTimes.sort((a, b) => a['time'].compareTo(b['time']));
+
                   return Dismissible(
-                    key: Key(_feedTimes[index]['id']),
+                    key: Key(_feedTimes[index]['id'] ??
+                        'defaultKey'), // Use a fallback value if 'id' is null
                     direction: DismissDirection.endToStart,
                     background: Container(
                       color: Colors.red,
@@ -227,7 +245,8 @@ class _FeedTimerPageState extends State<FeedTimerPage> {
                         title: GestureDetector(
                           onTap: () => _pickTime(context, index),
                           child: Text(
-                            _feedTimes[index]['time'],
+                            _feedTimes[index]['time'] ??
+                                'No Time Set', // Fallback for time
                             style: TextStyle(
                                 fontSize: 24,
                                 color: _feedTimes[index]['enabled']
