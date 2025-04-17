@@ -9,6 +9,7 @@ import 'package:auto_test/screen/FeedTimerPage.dart';
 import 'package:auto_test/screen/report.dart';
 import 'package:auto_test/screen/profile.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:intl/intl.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -71,6 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String? name;
   bool feedSwitch = false;
   bool powerSwitch = false;
+  String? todaySchedule = "Loading today's schedule...";
 
   @override
   void initState() {
@@ -79,6 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
     fetchFeedSwitchState();
     fetchPowerSwitchState();
     checkFoodLevel();
+    fetchTodaySchedule();
   }
 
   Future<void> fetchname() async {
@@ -120,6 +123,47 @@ class _HomeScreenState extends State<HomeScreen> {
           powerSwitch = snapshot.value as bool;
         });
       }
+    }
+  }
+
+  void fetchTodaySchedule() async {
+    final User? _currentUser = FirebaseAuth.instance.currentUser;
+    if (_currentUser == null) return;
+
+    // Adjust for Malaysia timezone (GMT+8)
+    final now = DateTime.now().add(Duration(hours: 8));
+    final today = DateFormat('EEEE').format(now); // Get the day of the week
+    final todayDate = DateFormat('yyyy-MM-dd').format(now); // Get today's date
+
+    debugPrint("Today: $today"); // Check the current day
+
+    final scheduleRef =
+        FirebaseDatabase.instance.ref('users/${_currentUser.uid}/schedule');
+
+    final snapshot = await scheduleRef.get();
+
+    if (snapshot.exists) {
+      final data = snapshot.value as Map<dynamic, dynamic>;
+      List<String> todayTimers = [];
+
+      data.forEach((key, value) {
+        if (value['day'] != null && value['enabled'] == true) {
+          String days = value['day']; // Example: "Monday, Wednesday"
+          if (days.contains(today)) {
+            todayTimers.add(value['time']); // Collect time if day matches
+          }
+        }
+      });
+
+      setState(() {
+        todaySchedule = todayTimers.isNotEmpty
+            ? "$today, $todayDate: ${todayTimers.join(", ")}" // Show day and date
+            : "No schedule for today.";
+      });
+    } else {
+      setState(() {
+        todaySchedule = "No schedule found.";
+      });
     }
   }
 
@@ -282,10 +326,17 @@ class _HomeScreenState extends State<HomeScreen> {
               color: Colors.black,
             ),
           ),
+          Text(
+            name ?? 'Loading...',
+            style: const TextStyle(
+              fontSize: 15.0,
+              color: Colors.black,
+            ),
+          ),
           const SizedBox(height: 20),
           const SizedBox(height: 20),
           Container(
-            height: 180,
+            height: 150, // Adjusted height to fit schedule and toggle only
             width: 350,
             decoration: BoxDecoration(
               color: Colors.white,
@@ -302,112 +353,21 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const SizedBox(height: 20),
                 Padding(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 10.0,
-                    vertical: 10.0,
-                  ),
-                  child: Row(
-                    children: [
-                      const Text(
-                        'Hello, ',
-                        style: TextStyle(
-                          fontSize: 20.0,
-                          color: Colors.black,
-                          //fontWeight: FontWeight.bold,
-                        ),
+                      horizontal: 20.0), // Add horizontal padding
+                  child: Center(
+                    child: Text(
+                      todaySchedule ?? "No feeding schedule today.",
+                      style: const TextStyle(
+                        fontSize: 22.0,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
                       ),
-                      Text(
-                        name ?? 'Loading...',
-                        style: const TextStyle(
-                          fontSize: 20.0,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
-                const SizedBox(height: 20),
-                Center(
-                  child: DefaultTextStyle.merge(
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 13.0,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      child: IconTheme.merge(
-                        data: const IconThemeData(color: Colors.white),
-                        child: AnimatedToggleSwitch.dual(
-                          current: feedSwitch,
-                          first: false,
-                          second: true,
-                          spacing: 1,
-                          animationDuration: const Duration(milliseconds: 600),
-                          style: const ToggleStyle(
-                            borderColor: Colors.transparent,
-                            indicatorColor: Colors.white,
-                            backgroundColor: Colors.black,
-                          ),
-                          customStyleBuilder: (context, local, global) {
-                            if (global.position <= 0) {
-                              return ToggleStyle(
-                                backgroundColor: Colors.grey[300],
-                              );
-                            }
-                            return ToggleStyle(
-                                backgroundGradient: LinearGradient(colors: [
-                              Colors.green,
-                              Colors.grey[300]!
-                            ], stops: [
-                              global.position -
-                                  (1 - 2 * max(0, global.position - 0.5)) * 0.7,
-                              global.position +
-                                  max(0, 2 * (global.position - 0.5)) * 0.7,
-                            ]));
-                          },
-                          borderWidth: 3,
-                          height: 40,
-                          loadingIconBuilder: (context, global) =>
-                              CupertinoActivityIndicator(
-                            color: Color.lerp(
-                                Colors.red[800], Colors.green, global.position),
-                          ),
-                          onChanged: (value) {
-                            setState(() => feedSwitch = value);
-                            // Send feed status to Firebase
-                            sendFeedData(value);
-                          },
-                          iconBuilder: (value) => value
-                              ? const Icon(
-                                  Icons.autorenew,
-                                  color: Colors.black,
-                                  size: 22,
-                                )
-                              : const Icon(
-                                  Icons.block,
-                                  color: Colors.black,
-                                  size: 22,
-                                ),
-                          textBuilder: (value) => value
-                              ? const Center(
-                                  child: Text(
-                                    'Feed',
-                                    style: TextStyle(
-                                      color: Colors.black,
-                                    ),
-                                  ),
-                                )
-                              : const Center(
-                                  child: Text(
-                                    'Idle',
-                                    style: TextStyle(
-                                      color: Colors.black,
-                                    ),
-                                  ),
-                                ),
-                        ),
-                      )),
-                )
               ],
             ),
           ),
