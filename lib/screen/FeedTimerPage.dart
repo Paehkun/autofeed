@@ -14,7 +14,7 @@ class FeedTimerPage extends StatefulWidget {
 class _FeedTimerPageState extends State<FeedTimerPage> {
   final DatabaseReference _database = FirebaseDatabase.instance.ref();
   final User? _currentUser = FirebaseAuth.instance.currentUser;
-  List<Map<String, dynamic>> _feedTimes = [];
+  final List<Map<String, dynamic>> _feedTimes = [];
   final List<String> _daysOfWeek = [
     'Monday',
     'Tuesday',

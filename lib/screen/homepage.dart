@@ -127,18 +127,18 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void fetchTodaySchedule() async {
-    final User? _currentUser = FirebaseAuth.instance.currentUser;
-    if (_currentUser == null) return;
+    final User? currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) return;
 
     // Adjust for Malaysia timezone (GMT+8)
-    final now = DateTime.now().add(Duration(hours: 8));
+    final now = DateTime.now().add(const Duration(hours: 8));
     final today = DateFormat('EEEE').format(now); // Get the day of the week
     final todayDate = DateFormat('yyyy-MM-dd').format(now); // Get today's date
 
     debugPrint("Today: $today"); // Check the current day
 
     final scheduleRef =
-        FirebaseDatabase.instance.ref('users/${_currentUser.uid}/schedule');
+        FirebaseDatabase.instance.ref('users/${currentUser.uid}/schedule');
 
     final snapshot = await scheduleRef.get();
 
@@ -336,7 +336,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 20),
           const SizedBox(height: 20),
           Container(
-            height: 150, // Adjusted height to fit schedule and toggle only
+            height: 200, // Adjusted height to fit schedule and toggle only
             width: 350,
             decoration: BoxDecoration(
               color: Colors.white,
