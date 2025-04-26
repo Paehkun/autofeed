@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AdminPage extends StatefulWidget {
   const AdminPage({super.key});
@@ -42,10 +43,26 @@ class _AdminPageState extends State<AdminPage> {
     }
   }
 
+  // Logout logic
+  Future<void> logOut() async {
+    await FirebaseAuth.instance.signOut();
+    // Navigate to the login screen after logout
+    Navigator.pushReplacementNamed(context, '/login');
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Admin Dashboard'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.logout),
+              onPressed: logOut, // Call logout when button is pressed
+            ),
+          ],
+        ),
         backgroundColor: Colors.grey[100],
         body: Padding(
           padding: const EdgeInsets.all(16.0),
