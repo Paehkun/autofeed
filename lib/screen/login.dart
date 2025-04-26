@@ -1,7 +1,9 @@
 import 'package:auto_test/component/login_button.dart';
+import 'package:auto_test/screen/admin.dart';
 import 'package:auto_test/screen/homepage.dart';
 import 'package:auto_test/screen/textfield.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:auto_test/screen/forgotpass.dart';
 import 'package:flutter/material.dart';
 
@@ -17,71 +19,102 @@ class _LoginState extends State<Login> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
+  // Define the fake admin email
+  final String adminEmail = "admin@autofeed.com";
+
   void signInUser() async {
-    // Show loading indicator
     showDialog(
       context: context,
       builder: (context) {
-        return const Center(
-          child: CircularProgressIndicator(),
-        );
+        return const Center(child: CircularProgressIndicator());
       },
     );
 
     try {
-      // Sign in the user with email and password
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: emailController.text,
         password: passwordController.text,
       );
 
-      // Get the current user
       User? user = FirebaseAuth.instance.currentUser;
 
-      // Check if the user's email is verified
-      if (user != null && !user.emailVerified) {
-        // Close the loading dialog
-        Navigator.pop(context);
+      if (user != null) {
+        // Check if the email is the fake admin email
+        if (user.email == adminEmail) {
+          // Skip email verification and go directly to admin page
+          Navigator.pop(context);
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const AdminPage(),
+            ),
+          );
+        } else if (!user.emailVerified) {
+          // If not the admin, and the email is not verified, show alert
+          Navigator.pop(context);
+          showDialog(
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                title: const Text('Email Not Verified'),
+                content: const Text(
+                    'Please verify your email before logging in. A verification link has been sent to your email.'),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context); // Close the dialog
+                    },
+                    child: const Text('OK'),
+                  ),
+                ],
+              );
+            },
+          );
+          await FirebaseAuth.instance.signOut();
+        } else {
+          // If email is verified, check role in Realtime Database
+          DatabaseReference userRef =
+              FirebaseDatabase.instance.ref('users/${user.uid}');
+          DataSnapshot snapshot = await userRef.get();
 
-        // Show the email verification dialog
-        showDialog(
-          context: context,
-          builder: (context) {
-            return AlertDialog(
-              title: const Text('Email Not Verified'),
-              content: const Text(
-                  'Please verify your email before logging in. A verification link has been sent to your email.'),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context); // Close the dialog
-                  },
-                  child: const Text('OK'),
+          Navigator.pop(context);
+
+          if (snapshot.exists) {
+            String role = snapshot.child('role').value.toString();
+
+            if (role == 'admin') {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AdminPage(),
                 ),
-              ],
+              );
+            } else {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const HomePage(),
+                ),
+              );
+            }
+          } else {
+            showDialog(
+              context: context,
+              builder: (context) {
+                return const AlertDialog(
+                  title: Text('Error'),
+                  content: Text('User role not found.'),
+                );
+              },
             );
-          },
-        );
-        // Optionally sign out the user as they cannot proceed without verified email
-        await FirebaseAuth.instance.signOut();
-      } else {
-        // Close the loading dialog
-        //Navigator.pop(context);
-
-        // Proceed to the home screen if email is verified
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) =>
-                const HomePage(), // Replace with your home screen
-          ),
-        );
+            await FirebaseAuth.instance.signOut();
+          }
+        }
       }
     } on FirebaseAuthException catch (e) {
       print("Firebase error code: ${e.code}");
       Navigator.pop(context); // Pop loading dialog
 
-      // Show error messages
       if (e.code == 'invalid-email') {
         wrongEmailMessage();
       } else if (e.code == 'invalid-credential') {
@@ -130,13 +163,8 @@ class _LoginState extends State<Login> {
           child: SingleChildScrollView(
             child: Column(
               children: [
-                // Logo
-                const Icon(
-                  Icons.lock,
-                  size: 80,
-                ),
+                const Icon(Icons.lock, size: 80),
                 const SizedBox(height: 40),
-                // Welcome
                 Text(
                   'Welcome to AutoFeed',
                   style: TextStyle(
@@ -145,20 +173,17 @@ class _LoginState extends State<Login> {
                   ),
                 ),
                 const SizedBox(height: 120),
-                // Email field
                 Textfield(
                   controller: emailController,
                   hintText: 'Email',
                   obsecureText: false,
                 ),
                 const SizedBox(height: 30),
-                // Password field
                 Textfield(
                   controller: passwordController,
                   hintText: 'Password',
                   obsecureText: true,
                 ),
-                // Forgot password link
                 const SizedBox(height: 10),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 25.0),
@@ -170,8 +195,7 @@ class _LoginState extends State<Login> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const Forgotpass(),
-                            ),
+                                builder: (context) => const Forgotpass()),
                           );
                         },
                         child: const Text(
@@ -186,12 +210,8 @@ class _LoginState extends State<Login> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                // Sign in button
-                Button(
-                  onTap: signInUser,
-                ),
+                Button(onTap: signInUser),
                 const SizedBox(height: 20),
-                // Divider
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 25.0),
                   child: Row(
@@ -209,7 +229,6 @@ class _LoginState extends State<Login> {
                     ],
                   ),
                 ),
-                // Register button
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -217,9 +236,7 @@ class _LoginState extends State<Login> {
                       'Don\'t Have Account Yet? ',
                       style: TextStyle(color: Colors.grey[700]),
                     ),
-                    const SizedBox(
-                      height: 40.0,
-                    ),
+                    const SizedBox(height: 40.0),
                     GestureDetector(
                       onTap: widget.onTap,
                       child: const Text(
