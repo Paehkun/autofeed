@@ -50,6 +50,7 @@ dependencies:
   shared_preferences: ^2.5.2
   #flutter_native_timezone: ^2.0.0
   intl: ^0.20.2
+  flutter_mjpeg: ^2.0.4
 
 dev_dependencies:
   flutter_test:
