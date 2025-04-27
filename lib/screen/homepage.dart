@@ -11,6 +11,7 @@ import 'package:auto_test/screen/report.dart';
 import 'package:auto_test/screen/profile.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:intl/intl.dart';
+import 'package:dropdown_button2/dropdown_button2.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -77,6 +78,8 @@ class _HomeScreenState extends State<HomeScreen> {
   bool feedSwitch = false;
   bool powerSwitch = false;
   String? todaySchedule = "Loading today's schedule...";
+  String? selectedFishAge;
+  String? selectedFishAmount;
 
   @override
   void initState() {
@@ -87,6 +90,13 @@ class _HomeScreenState extends State<HomeScreen> {
     checkFoodLevel();
     fetchTodaySchedule();
   }
+
+  final Map<String, List<String>> fishAgeAmountOptions = {
+    '24 months and above': ['0–5', '6–10', '11–15', '15 and above'],
+    '12–24 months': ['0–5', '6–10', '11–15', '15 and above'],
+    '6–12 months': ['0–5', '6–10', '11–15', '15 and above'],
+    'Custom': [],
+  };
 
   Future<void> fetchname() async {
     User? currentUser = FirebaseAuth.instance.currentUser;
@@ -137,7 +147,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // Adjust for Malaysia timezone (GMT+8)
     final now = DateTime.now().add(const Duration(hours: 8));
     final today = DateFormat('EEEE').format(now); // Get the day of the week
-    final todayDate = DateFormat('yyyy-MM-dd').format(now); // Get today's date
+    final todayDate = DateFormat('dd-MM-yyyy').format(now); // Get today's date
 
     debugPrint("Today: $today"); // Check the current day
 
@@ -161,7 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       setState(() {
         todaySchedule = todayTimers.isNotEmpty
-            ? "$today, $todayDate: ${todayTimers.join(", ")}" // Show day and date
+            ? "$today, $todayDate :\n${todayTimers.join("\n")}" // Show day and date
             : "No schedule for today.";
       });
     } else {
@@ -280,114 +290,202 @@ class _HomeScreenState extends State<HomeScreen> {
         },
       );
     }
-    return SafeArea(
-      child: Column(
-        children: [
-          const SizedBox(height: 20),
-          Row(
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
             children: [
-              IconButton(
-                onPressed: () {
-                  // Show confirmation dialog before logging out
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: const Text('Confirm Logout'),
-                        content:
-                            const Text('Are you sure you want to log out?'),
-                        actions: [
-                          TextButton(
-                            onPressed: () {
-                              Navigator.of(context).pop(); // Close the dialog
-                            },
-                            child: const Text('No'),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              signUserOut(
-                                  context); // Call the sign out function
-                              Navigator.of(context).pop(); // Close the dialog
-                            },
-                            child: const Text('Yes'),
-                          ),
-                        ],
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: () {
+                      // Show confirmation dialog before logging out
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: const Text('Confirm Logout'),
+                            content:
+                                const Text('Are you sure you want to log out?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.of(context)
+                                      .pop(); // Close the dialog
+                                },
+                                child: const Text('No'),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  signUserOut(
+                                      context); // Call the sign out function
+                                  Navigator.of(context)
+                                      .pop(); // Close the dialog
+                                },
+                                child: const Text('Yes'),
+                              ),
+                            ],
+                          );
+                        },
                       );
                     },
-                  );
-                },
-                icon: const Icon(Icons.logout),
+                    icon: const Icon(Icons.logout),
+                  ),
+                ],
               ),
-            ],
-          ),
 
-          //tajuk
-          const Text(
-            'AutoFeed',
-            style: TextStyle(
-              fontSize: 23.0,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-            ),
-          ),
-          Text(
-            name ?? 'Loading...',
-            style: const TextStyle(
-              fontSize: 15.0,
-              color: Colors.black,
-            ),
-          ),
-          const SizedBox(height: 15),
-          Container(
-            height: 200, // Adjusted height to fit schedule and toggle only
-            width: 350,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1), // Shadow color
-                  spreadRadius: 10, // Spread of the shadow
-                  blurRadius: 10, // How much the shadow is blurred
-                  offset: const Offset(3, 5), // Position of the shadow (x, y)
+              //tajuk
+              const Text(
+                'AutoFeed',
+                style: TextStyle(
+                  fontSize: 23.0,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
                 ),
-              ],
-              borderRadius: BorderRadius.circular(25),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 20),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 20.0), // Add horizontal padding
-                  child: Center(
-                    child: Text(
-                      todaySchedule ?? "No feeding schedule today.",
-                      style: const TextStyle(
-                        fontSize: 22.0,
-                        fontWeight: FontWeight.bold,
+              ),
+              Text(
+                name ?? 'Loading...',
+                style: const TextStyle(
+                  fontSize: 15.0,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 15),
+              DropdownButtonHideUnderline(
+                child: DropdownButton2<String>(
+                  isExpanded: true,
+                  hint: const Text(
+                    'Select Fish Age',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.black,
+                    ),
+                  ),
+                  items: fishAgeAmountOptions.keys.map((item) {
+                    return DropdownMenuItem<String>(
+                      value: item,
+                      child: Text(
+                        item,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.black,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                  value: selectedFishAge,
+                  onChanged: (value) {
+                    setState(() {
+                      selectedFishAge = value;
+                      selectedFishAmount =
+                          null; // Reset fish amount on age change
+                    });
+
+                    // If "Custom" is selected, navigate to FeedTimerPage
+                    if (value == 'Custom') {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const FeedTimerPage()),
+                      );
+                    }
+                  },
+                  buttonStyleData: ButtonStyleData(
+                    height: 50,
+                    width: 200,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: Colors.black26,
+                      ),
+                      color: Colors.white,
+                    ),
+                    elevation: 2,
+                  ),
+                  dropdownStyleData: DropdownStyleData(
+                    maxHeight: 200,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      color: Colors.white,
+                    ),
+                  ),
+                  menuItemStyleData: const MenuItemStyleData(
+                    height: 40,
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 15),
+              // Second Dropdown: Select Fish Amount based on Fish Age
+              if (selectedFishAge != null && selectedFishAge != 'Custom')
+                DropdownButtonHideUnderline(
+                  child: DropdownButton2<String>(
+                    isExpanded: true,
+                    hint: const Text(
+                      'Select Fish Amount',
+                      style: TextStyle(
+                        fontSize: 14,
                         color: Colors.black,
                       ),
                     ),
+                    items: fishAgeAmountOptions[selectedFishAge]!.map((item) {
+                      return DropdownMenuItem<String>(
+                        value: item,
+                        child: Text(
+                          item,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.black,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                    value: selectedFishAmount,
+                    onChanged: (value) {
+                      setState(() {
+                        selectedFishAmount = value;
+                      });
+                    },
+                    buttonStyleData: ButtonStyleData(
+                      height: 50,
+                      width: 200,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: Colors.black26,
+                        ),
+                        color: Colors.white,
+                      ),
+                      elevation: 2,
+                    ),
+                    dropdownStyleData: DropdownStyleData(
+                      maxHeight: 200,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                        color: Colors.white,
+                      ),
+                    ),
+                    menuItemStyleData: const MenuItemStyleData(
+                      height: 40,
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                    ),
                   ),
                 ),
-              ],
-            ),
-          ),
+              const SizedBox(height: 15),
 
-          const SizedBox(height: 15),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
               Container(
-                height: 200,
-                width: 150,
+                height: 200, // Adjusted height to fit schedule and toggle only
+                width: 350,
                 decoration: BoxDecoration(
                   color: Colors.white,
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.1), // Shadow color
-                      spreadRadius: 7, // Spread of the shadow
+                      spreadRadius: 10, // Spread of the shadow
                       blurRadius: 10, // How much the shadow is blurred
                       offset:
                           const Offset(3, 5), // Position of the shadow (x, y)
@@ -395,174 +493,237 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                   borderRadius: BorderRadius.circular(25),
                 ),
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Text(
-                          'Food Level',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 20),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20.0), // Add horizontal padding
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Center(
+                            child: Text(
+                              "Schedule",
+                              style: TextStyle(
+                                fontSize: 18.0,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            todaySchedule ?? "No feeding schedule today.",
+                            style: const TextStyle(
+                              fontSize: 18.0,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 15),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Container(
+                    height: 200,
+                    width: 150,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1), // Shadow color
+                          spreadRadius: 7, // Spread of the shadow
+                          blurRadius: 10, // How much the shadow is blurred
+                          offset: const Offset(
+                              3, 5), // Position of the shadow (x, y)
+                        ),
+                      ],
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          const Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Text(
+                              'Food Level',
+                              style: TextStyle(
+                                fontSize: 16.0,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 15),
+                          // Fetch data from Firebase
+                          displayFoodLevelCircular(realTimeValue),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Container(
+                    height: 200,
+                    width: 150,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          spreadRadius: 7,
+                          blurRadius: 10,
+                          offset: const Offset(3, 5),
+                        ),
+                      ],
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Image.asset(
+                            'assets/images/feeder.png',
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        const Text(
+                          "Device",
                           style: TextStyle(
                             fontSize: 16.0,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black,
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 15),
-                      // Fetch data from Firebase
-                      displayFoodLevelCircular(realTimeValue),
-                    ],
+                        DefaultTextStyle.merge(
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontSize: 13.0,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            child: IconTheme.merge(
+                              data: const IconThemeData(color: Colors.white),
+                              child: AnimatedToggleSwitch.dual(
+                                current: powerSwitch,
+                                first: false,
+                                second: true,
+                                spacing: 20,
+                                animationDuration:
+                                    const Duration(milliseconds: 600),
+                                style: const ToggleStyle(
+                                  borderColor: Colors.transparent,
+                                  indicatorColor: Colors.white,
+                                  backgroundColor: Colors.black,
+                                ),
+                                customStyleBuilder: (context, local, global) {
+                                  if (global.position <= 0) {
+                                    return ToggleStyle(
+                                      backgroundColor: Colors.grey[300],
+                                    );
+                                  }
+                                  return ToggleStyle(
+                                      backgroundGradient:
+                                          LinearGradient(colors: [
+                                    Colors.green,
+                                    Colors.grey[300]!
+                                  ], stops: [
+                                    global.position -
+                                        (1 -
+                                                2 *
+                                                    max(
+                                                        0,
+                                                        global.position -
+                                                            0.5)) *
+                                            0.7,
+                                    global.position +
+                                        max(0, 2 * (global.position - 0.5)) *
+                                            0.7,
+                                  ]));
+                                },
+                                borderWidth: 3,
+                                height: 40,
+                                loadingIconBuilder: (context, global) =>
+                                    CupertinoActivityIndicator(
+                                  color: Color.lerp(Colors.red[800],
+                                      Colors.green, global.position),
+                                ),
+                                onChanged: (value) {
+                                  setState(() => powerSwitch = value);
+                                  // Send power status to Firebase
+                                  sendPowerData(value);
+                                },
+                                iconBuilder: (value) => value
+                                    ? const Icon(
+                                        Icons.power_settings_new_rounded,
+                                        color: Colors.black,
+                                        size: 22,
+                                      )
+                                    : const Icon(
+                                        Icons.power_settings_new_rounded,
+                                        color: Colors.black,
+                                        size: 22,
+                                      ),
+                                textBuilder: (value) => value
+                                    ? const Center(
+                                        child: Text('Active'),
+                                      )
+                                    : const Center(
+                                        child: Text('Inactive'),
+                                      ),
+                              ),
+                            )),
+                      ],
+                    ),
                   ),
-                ),
+                ],
               ),
+              const SizedBox(height: 15),
               Container(
-                height: 200,
-                width: 150,
+                height: 200, // Adjusted height to fit schedule and toggle only
+                width: 350,
                 decoration: BoxDecoration(
                   color: Colors.white,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      spreadRadius: 7,
-                      blurRadius: 10,
-                      offset: const Offset(3, 5),
+                      color: Colors.black.withOpacity(0.1), // Shadow color
+                      spreadRadius: 10, // Spread of the shadow
+                      blurRadius: 10, // How much the shadow is blurred
+                      offset:
+                          const Offset(3, 5), // Position of the shadow (x, y)
                     ),
                   ],
                   borderRadius: BorderRadius.circular(25),
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
+                child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    SizedBox(height: 20),
                     Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Image.asset(
-                        'assets/images/feeder.png',
-                        width: 100,
-                        height: 100,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    const Text(
-                      "Device",
-                      style: TextStyle(
-                        fontSize: 16.0,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    DefaultTextStyle.merge(
-                        style: const TextStyle(
-                          color: Colors.black,
-                          fontSize: 13.0,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        child: IconTheme.merge(
-                          data: const IconThemeData(color: Colors.white),
-                          child: AnimatedToggleSwitch.dual(
-                            current: powerSwitch,
-                            first: false,
-                            second: true,
-                            spacing: 20,
-                            animationDuration:
-                                const Duration(milliseconds: 600),
-                            style: const ToggleStyle(
-                              borderColor: Colors.transparent,
-                              indicatorColor: Colors.white,
-                              backgroundColor: Colors.black,
-                            ),
-                            customStyleBuilder: (context, local, global) {
-                              if (global.position <= 0) {
-                                return ToggleStyle(
-                                  backgroundColor: Colors.grey[300],
-                                );
-                              }
-                              return ToggleStyle(
-                                  backgroundGradient: LinearGradient(colors: [
-                                Colors.green,
-                                Colors.grey[300]!
-                              ], stops: [
-                                global.position -
-                                    (1 - 2 * max(0, global.position - 0.5)) *
-                                        0.7,
-                                global.position +
-                                    max(0, 2 * (global.position - 0.5)) * 0.7,
-                              ]));
-                            },
-                            borderWidth: 3,
-                            height: 40,
-                            loadingIconBuilder: (context, global) =>
-                                CupertinoActivityIndicator(
-                              color: Color.lerp(Colors.red[800], Colors.green,
-                                  global.position),
-                            ),
-                            onChanged: (value) {
-                              setState(() => powerSwitch = value);
-                              // Send power status to Firebase
-                              sendPowerData(value);
-                            },
-                            iconBuilder: (value) => value
-                                ? const Icon(
-                                    Icons.power_settings_new_rounded,
-                                    color: Colors.black,
-                                    size: 22,
-                                  )
-                                : const Icon(
-                                    Icons.power_settings_new_rounded,
-                                    color: Colors.black,
-                                    size: 22,
-                                  ),
-                            textBuilder: (value) => value
-                                ? const Center(
-                                    child: Text('Active'),
-                                  )
-                                : const Center(
-                                    child: Text('Inactive'),
-                                  ),
+                      padding: EdgeInsets.symmetric(
+                          horizontal: 20.0), // Add horizontal padding
+                      child: Center(
+                        child: Text(
+                          "Feeding Log",
+                          style: TextStyle(
+                            fontSize: 15.0,
+                            color: Colors.black,
                           ),
-                        )),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 15),
-          Container(
-            height: 200, // Adjusted height to fit schedule and toggle only
-            width: 350,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1), // Shadow color
-                  spreadRadius: 10, // Spread of the shadow
-                  blurRadius: 10, // How much the shadow is blurred
-                  offset: const Offset(3, 5), // Position of the shadow (x, y)
-                ),
-              ],
-              borderRadius: BorderRadius.circular(25),
-            ),
-            child: const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(height: 20),
-                Padding(
-                  padding: EdgeInsets.symmetric(
-                      horizontal: 20.0), // Add horizontal padding
-                  child: Center(
-                    child: Text(
-                      "Feeding Log",
-                      style: TextStyle(
-                        fontSize: 15.0,
-                        color: Colors.black,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
