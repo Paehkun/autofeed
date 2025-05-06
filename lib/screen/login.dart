@@ -19,12 +19,12 @@ class _LoginState extends State<Login> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
-  // Define the fake admin email
   final String adminEmail = "admin@autofeed.com";
 
   void signInUser() async {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) {
         return const Center(child: CircularProgressIndicator());
       },
@@ -32,38 +32,43 @@ class _LoginState extends State<Login> {
 
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: emailController.text,
-        password: passwordController.text,
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
       );
 
       User? user = FirebaseAuth.instance.currentUser;
+      print("Signed in as: ${user?.email}");
 
       if (user != null) {
-        // Check if the email is the fake admin email
-        if (user.email == adminEmail) {
-          // Skip email verification and go directly to admin page
-          Navigator.pop(context);
+        final userEmail = user.email?.toLowerCase();
+        final isAdmin = userEmail == adminEmail.toLowerCase();
+
+        if (!mounted) return;
+        Navigator.pop(context); // Close loading dialog
+
+        if (isAdmin) {
+          print("Logging in as admin");
+          Navigator.pop(context); // Close loading
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(
-              builder: (context) => const AdminPage(),
-            ),
+            MaterialPageRoute(builder: (context) => const AdminPage()),
           );
         } else if (!user.emailVerified) {
-          // If not the admin, and the email is not verified, show alert
+          print("Email not verified");
           Navigator.pop(context);
+          await user.sendEmailVerification();
+
           showDialog(
             context: context,
             builder: (context) {
               return AlertDialog(
                 title: const Text('Email Not Verified'),
                 content: const Text(
-                    'Please verify your email before logging in. A verification link has been sent to your email.'),
+                  'Please verify your email before logging in. A verification link has been sent to your email.',
+                ),
                 actions: [
                   TextButton(
-                    onPressed: () {
-                      Navigator.pop(context); // Close the dialog
-                    },
+                    onPressed: () => Navigator.pop(context),
                     child: const Text('OK'),
                   ),
                 ],
@@ -72,32 +77,30 @@ class _LoginState extends State<Login> {
           );
           await FirebaseAuth.instance.signOut();
         } else {
-          // If email is verified, check role in Realtime Database
+          print("Checking user role in database...");
           DatabaseReference userRef =
               FirebaseDatabase.instance.ref('users/${user.uid}');
           DataSnapshot snapshot = await userRef.get();
 
-          Navigator.pop(context);
+          Navigator.pop(context); // Close loading
 
           if (snapshot.exists) {
             String role = snapshot.child('role').value.toString();
+            print("User role: $role");
 
             if (role == 'admin') {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const AdminPage(),
-                ),
+                MaterialPageRoute(builder: (context) => const AdminPage()),
               );
             } else {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const HomePage(),
-                ),
+                MaterialPageRoute(builder: (context) => const HomePage()),
               );
             }
           } else {
+            print("User role not found.");
             showDialog(
               context: context,
               builder: (context) {
@@ -112,8 +115,8 @@ class _LoginState extends State<Login> {
         }
       }
     } on FirebaseAuthException catch (e) {
-      print("Firebase error code: ${e.code}");
-      Navigator.pop(context); // Pop loading dialog
+      Navigator.pop(context);
+      print("FirebaseAuthException: ${e.code}");
 
       if (e.code == 'invalid-email') {
         wrongEmailMessage();
@@ -129,6 +132,10 @@ class _LoginState extends State<Login> {
           },
         );
       }
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context);
+      print("Unexpected error: $e");
     }
   }
 
