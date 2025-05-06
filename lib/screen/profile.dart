@@ -41,7 +41,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       // Fetch username
       DataSnapshot nameSnapshot = await userRef.child('name').get();
-      if (nameSnapshot.exists) {
+      if (nameSnapshot.exists && mounted) {
         setState(() {
           name = nameSnapshot.value as String?;
           nameController.text = name ?? '';
@@ -67,7 +67,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       // Fetch profile image
       DataSnapshot profileImageSnapshot =
           await userRef.child('profileImageBase64').get();
-      if (profileImageSnapshot.exists) {
+      if (profileImageSnapshot.exists && mounted) {
         setState(() {
           profileImageBase64 = profileImageSnapshot.value as String?;
         });
