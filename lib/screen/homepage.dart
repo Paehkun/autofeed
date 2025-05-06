@@ -118,7 +118,7 @@ class _HomeScreenState extends State<HomeScreen> {
       DatabaseReference feedRef =
           FirebaseDatabase.instance.ref('users/${user.uid}/device/status');
       DataSnapshot snapshot = await feedRef.get();
-      if (snapshot.exists) {
+      if (snapshot.exists && mounted) {
         setState(() {
           feedSwitch = snapshot.value as bool;
         });
@@ -132,7 +132,7 @@ class _HomeScreenState extends State<HomeScreen> {
       DatabaseReference powerRef =
           FirebaseDatabase.instance.ref('users/${user.uid}/device/power');
       DataSnapshot snapshot = await powerRef.get();
-      if (snapshot.exists) {
+      if (snapshot.exists && mounted) {
         setState(() {
           powerSwitch = snapshot.value as bool;
         });
@@ -167,6 +167,14 @@ class _HomeScreenState extends State<HomeScreen> {
             todayTimers.add(value['time']); // Collect time if day matches
           }
         }
+      });
+
+      // Sort times
+      todayTimers.sort((a, b) {
+        final timeA =
+            DateFormat('hh:mm a').parse(a); // Correct for 12-hour format
+        final timeB = DateFormat('hh:mm a').parse(b);
+        return timeA.compareTo(timeB);
       });
 
       setState(() {
@@ -478,7 +486,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 15),
 
               Container(
-                height: 200, // Adjusted height to fit schedule and toggle only
+                height: 220, // Adjusted height to fit schedule and toggle only
                 width: 350,
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -496,14 +504,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 5),
                     Padding(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 20.0), // Add horizontal padding
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Center(
+                          const Center(
                             child: Text(
                               "Schedule",
                               style: TextStyle(
