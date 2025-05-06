@@ -52,6 +52,11 @@ class _FeedTimerPageState extends State<FeedTimerPage> {
           'enabled': value['enabled'] ?? false,
         });
       });
+      _feedTimes.sort((a, b) {
+        final timeA = DateFormat('hh:mm a').parse(a['time']);
+        final timeB = DateFormat('hh:mm a').parse(b['time']);
+        return timeA.compareTo(timeB);
+      });
     }
 
     if (mounted) setState(() {});
@@ -115,9 +120,21 @@ class _FeedTimerPageState extends State<FeedTimerPage> {
   Future<void> _saveScheduleToFirebase(int index) async {
     if (_currentUser == null || _feedTimes.isEmpty) return;
 
-    // Generate an ID — or use Firebase's push() for unique IDs
-    String scheduleId = 'timer${_feedTimes.length + 1}';
+    // SAFELY find existing IDs
+    Set<String> existingIds = _feedTimes
+        .where((e) => e['id'] != null && (e['id'] as String).isNotEmpty)
+        .map<String>((e) => e['id'].toString())
+        .toSet();
 
+    // Find next available timer number
+    int timerNumber = 1;
+    while (existingIds.contains('timer$timerNumber')) {
+      timerNumber++;
+    }
+
+    String scheduleId = 'timer$timerNumber';
+
+    // Save to Firebase
     await _database
         .child("users/${_currentUser.uid}/schedule/$scheduleId")
         .set({
@@ -126,7 +143,7 @@ class _FeedTimerPageState extends State<FeedTimerPage> {
       'enabled': _feedTimes[index]['enabled'],
     });
 
-    // 💡 Save the ID locally for future updates
+    // Save the id locally
     _feedTimes[index]['id'] = scheduleId;
   }
 
@@ -135,8 +152,7 @@ class _FeedTimerPageState extends State<FeedTimerPage> {
 
     String? scheduleId = _feedTimes[index]['id'];
 
-    // 🧠 Extra check to prevent null crash
-    if (scheduleId == null) return;
+    if (scheduleId == null || scheduleId.isEmpty) return; // Extra safety
 
     await _database
         .child("users/${_currentUser.uid}/schedule/$scheduleId")
@@ -150,8 +166,9 @@ class _FeedTimerPageState extends State<FeedTimerPage> {
   Future<void> _deleteSchedule(int index) async {
     if (_currentUser == null || _feedTimes.isEmpty) return;
 
-    String scheduleId =
-        'timer${index + 1}'; // This will match the timerX format
+    String? scheduleId = _feedTimes[index]['id'];
+
+    if (scheduleId == null || scheduleId.isEmpty) return; // Prevent null crash
 
     // Remove the schedule data from Firebase
     await _database
@@ -159,6 +176,7 @@ class _FeedTimerPageState extends State<FeedTimerPage> {
         .remove();
 
     if (!mounted) return;
+
     // Remove the item from the list
     setState(() {
       _feedTimes.removeAt(index);
@@ -192,93 +210,120 @@ class _FeedTimerPageState extends State<FeedTimerPage> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Column(
-        children: [
-          const SizedBox(height: 25),
-          const Text("Set Timer", style: TextStyle(fontSize: 24)),
-          const SizedBox(height: 25),
-          Expanded(
-            child: Container(
-              color: Colors.grey[300],
-              child: ListView.builder(
-                itemCount: _feedTimes.length + 1,
-                itemBuilder: (context, index) {
-                  if (index == _feedTimes.length) {
-                    return GestureDetector(
-                      onTap: () => _pickTime(context),
-                      child: Container(
-                        height: 70,
-                        margin: const EdgeInsets.all(8.0),
-                        decoration: BoxDecoration(
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          children: [
+            const SizedBox(height: 25),
+            const Text("Set Timer", style: TextStyle(fontSize: 24)),
+            const SizedBox(height: 25),
+            Expanded(
+              child: Container(
+                color: Colors.white,
+                child: ListView.builder(
+                  itemCount: _feedTimes.length + 1,
+                  itemBuilder: (context, index) {
+                    if (index == _feedTimes.length) {
+                      return GestureDetector(
+                        onTap: () => _pickTime(context),
+                        child: Container(
+                          height: 60,
+                          margin: const EdgeInsets.all(8.0),
+                          decoration: BoxDecoration(
                             color: Colors.white,
-                            borderRadius: BorderRadius.circular(10)),
-                        child: const Center(
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black
+                                    .withOpacity(0.1), // Shadow color
+                                spreadRadius: 10, // Spread of the shadow
+                                blurRadius:
+                                    10, // How much the shadow is blurred
+                                offset: const Offset(
+                                    3, 5), // Position of the shadow (x, y)
+                              ),
+                            ],
+                            borderRadius:
+                                BorderRadius.circular(25), // Rounded corners
+                          ),
+                          child: const Center(
                             child:
-                                Icon(Icons.add, color: Colors.black, size: 30)),
-                      ),
-                    );
-                  }
-
-                  // Sort the feedTimes by time string before rendering
-                  _feedTimes.sort((a, b) => a['time'].compareTo(b['time']));
-
-                  return Dismissible(
-                    key: Key(_feedTimes[index]['id'] ??
-                        'defaultKey'), // Use a fallback value if 'id' is null
-                    direction: DismissDirection.endToStart,
-                    background: Container(
-                      color: Colors.red,
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: const Icon(Icons.delete,
-                          color: Colors.white, size: 30),
-                    ),
-                    onDismissed: (direction) => _deleteSchedule(index),
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(
-                          vertical: 4.0, horizontal: 8.0),
-                      decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10)),
-                      child: ListTile(
-                        title: GestureDetector(
-                          onTap: () => _pickTime(context, index),
-                          child: Text(
-                            _feedTimes[index]['time'] ??
-                                'No Time Set', // Fallback for time
-                            style: TextStyle(
-                                fontSize: 24,
-                                color: _feedTimes[index]['enabled']
-                                    ? Colors.black
-                                    : Colors.grey),
+                                Icon(Icons.add, color: Colors.black, size: 30),
                           ),
                         ),
-                        subtitle: GestureDetector(
-                          onTap: () => _selectDays(context, index),
-                          child: Text(
-                            _feedTimes[index]['days'].isEmpty
-                                ? "Select Days"
-                                : _feedTimes[index]['days'].join(", "),
-                            style: TextStyle(
-                                color: _feedTimes[index]['enabled']
-                                    ? Colors.black
-                                    : Colors.grey),
+                      );
+                    }
+                    return Dismissible(
+                        key: Key(_feedTimes[index]['id'] ??
+                            'defaultKey'), // Use a fallback value if 'id' is null
+                        direction: DismissDirection.endToStart,
+                        background: Container(
+                          color: Colors.red,
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: const Icon(Icons.delete,
+                              color: Colors.white, size: 30),
+                        ),
+                        onDismissed: (direction) => _deleteSchedule(index),
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(
+                              vertical: 4.0, horizontal: 8.0),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black
+                                    .withOpacity(0.1), // Shadow color
+                                spreadRadius: 10, // Spread of the shadow
+                                blurRadius:
+                                    10, // How much the shadow is blurred
+                                offset: const Offset(
+                                    3, 5), // Position of the shadow (x, y)
+                              ),
+                            ],
+                            borderRadius:
+                                BorderRadius.circular(25), // Rounded corners
                           ),
-                        ),
-                        trailing: Switch(
-                          value: _feedTimes[index]['enabled'],
-                          onChanged: (value) => _toggleFeedTime(index),
-                          activeColor: Colors.blue,
-                        ),
-                      ),
-                    ),
-                  );
-                },
+                          child: ListTile(
+                            title: GestureDetector(
+                              onTap: () => _pickTime(context, index),
+                              child: Text(
+                                _feedTimes[index]['time'] ??
+                                    'No Time Set', // Fallback for time
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  color: _feedTimes[index]['enabled']
+                                      ? Colors.black
+                                      : Colors.grey,
+                                ),
+                              ),
+                            ),
+                            subtitle: GestureDetector(
+                              onTap: () => _selectDays(context, index),
+                              child: Text(
+                                _feedTimes[index]['days'].isEmpty
+                                    ? "Select Days"
+                                    : _feedTimes[index]['days'].join(", "),
+                                style: TextStyle(
+                                  color: _feedTimes[index]['enabled']
+                                      ? Colors.black
+                                      : Colors.grey,
+                                ),
+                              ),
+                            ),
+                            trailing: Switch(
+                              value: _feedTimes[index]['enabled'],
+                              onChanged: (value) => _toggleFeedTime(index),
+                              activeColor: Colors.blue,
+                            ),
+                          ),
+                        ));
+                  },
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
