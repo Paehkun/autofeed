@@ -1,3 +1,4 @@
+import 'package:auto_test/screen/auth_page.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -22,7 +23,7 @@ class _AdminPageState extends State<AdminPage> {
   Future<void> fetchUsers() async {
     final snapshot = await usersRef.get();
 
-    if (snapshot.exists) {
+    if (snapshot.exists && mounted) {
       List<Map<String, dynamic>> tempList = [];
       Map usersMap = snapshot.value as Map;
 
@@ -43,32 +44,68 @@ class _AdminPageState extends State<AdminPage> {
     }
   }
 
-  // Logout logic
-  Future<void> logOut() async {
-    await FirebaseAuth.instance.signOut();
-    // Navigate to the login screen after logout
-    Navigator.pushReplacementNamed(context, '/login');
+  void signUserOut(BuildContext context) async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      // Navigate to the login screen after sign-out
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+            builder: (context) =>
+                const AuthPage()), // Replace with your login screen
+      );
+    } catch (e) {
+      print("Error logging out: $e");
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Admin Dashboard'),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.logout),
-              onPressed: logOut, // Call logout when button is pressed
-            ),
-          ],
-        ),
-        backgroundColor: Colors.grey[100],
-        body: Padding(
+    return Scaffold(
+      body: SafeArea(
+        child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: () {
+                      // Show confirmation dialog before logging out
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: const Text('Confirm Logout'),
+                            content:
+                                const Text('Are you sure you want to log out?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.of(context)
+                                      .pop(); // Close the dialog
+                                },
+                                child: const Text('No'),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  signUserOut(
+                                      context); // Call the sign out function
+                                  Navigator.of(context)
+                                      .pop(); // Close the dialog
+                                },
+                                child: const Text('Yes'),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                    icon: const Icon(Icons.logout),
+                  ),
+                ],
+              ),
               const Text(
                 'Manage Users',
                 style: TextStyle(
