@@ -13,9 +13,8 @@ class ReportScreen extends StatefulWidget {
 class _ReportScreenState extends State<ReportScreen> {
   final DatabaseReference _database = FirebaseDatabase.instance.ref();
   final User? _currentUser = FirebaseAuth.instance.currentUser;
-  String selectedFilter = "Week"; // Default filter
+  String selectedFilter = "week"; // Default filter
   List<FlSpot> chartData = [];
-
   List<double> monthlyUsage = List.filled(12, 0); // Array for monthly usage
   List<double> weeklyUsage =
       List.filled(7, 0); // Array for weekly usage (7 days in a week)
@@ -29,80 +28,96 @@ class _ReportScreenState extends State<ReportScreen> {
   Future<void> _fetchFoodUsageData() async {
     if (_currentUser == null) return;
 
-    // Access the "food_usage" node for the current user
     final snapshot =
         await _database.child('users/${_currentUser.uid}/food_usage').get();
 
     if (snapshot.exists && mounted) {
       Map<dynamic, dynamic> logs = snapshot.value as Map<dynamic, dynamic>;
 
-      // Reset arrays before calculating
-      setState(() {
-        monthlyUsage = List.filled(12, 0);
-        weeklyUsage = List.filled(7, 0);
-      });
+      List<double> tempMonthlyUsage = List.filled(12, 0);
+      List<double> tempWeeklyUsage = List.filled(7, 0);
 
-      // Iterate over the logs to calculate total food usage
       logs.forEach((key, value) {
-        // Check if the required fields ('food_dispensed' and 'time') are available
         if (value != null &&
             value['food_dispensed'] != null &&
             value['time'] != null) {
           double foodUsed = (value['food_dispensed'] is int)
               ? (value['food_dispensed'] as int).toDouble()
-              : value['food_dispensed']; // Cast to double if it's an int
+              : value['food_dispensed'];
 
-          // Only add food usage if food_dispensed is greater than zero
           if (foodUsed > 0) {
-            String timeStr = value['time']; // Time of feeding event
+            DateTime feedDate = DateTime.parse(value['time']);
+            int month = feedDate.month - 1;
+            int weekday = feedDate.weekday - 1;
 
-            // For now, we'll assume the feeding time can be mapped to today's date
-            DateTime feedDate = DateTime
-                .now(); // Modify this to use actual feeding date if possible
-            int month = feedDate.month -
-                1; // Adjust for Firebase 1-based month indexing
-            int weekday =
-                feedDate.weekday - 1; // Adjust for weekday index (Mon=0, Sun=6)
-
-            setState(() {
-              monthlyUsage[month] += foodUsed;
-              weeklyUsage[weekday] += foodUsed;
-            });
+            tempMonthlyUsage[month] += foodUsed;
+            tempWeeklyUsage[weekday] += foodUsed;
           }
         }
       });
 
-      updateChartData();
+      setState(() {
+        monthlyUsage = tempMonthlyUsage;
+        weeklyUsage = tempWeeklyUsage;
+      });
+
+      await updateChartData(); // Call after data is ready
     }
   }
 
-  void updateChartData() {
-    setState(() {
-      if (selectedFilter == "Week") {
-        // Weekly usage (displaying days of the week) in grams
+  Future<void> updateChartData() async {
+    if (selectedFilter == "week") {
+      setState(() {
         chartData = List.generate(
           7,
           (index) => FlSpot(index.toDouble(), weeklyUsage[index]),
         );
-      } else if (selectedFilter == "Month") {
-        // Monthly usage, divided into 4 weeks (in kilograms)
-        chartData = List.generate(
-          4,
-          (index) {
-            double weeklyAverage = monthlyUsage[index] / 4;
-            return FlSpot(
-                index.toDouble(), weeklyAverage / 1000); // Convert to kg
-          },
-        );
-      } else if (selectedFilter == "Year") {
-        // Yearly cumulative food usage (per month) in kilograms
-        double total = 0;
-        chartData = List.generate(12, (index) {
-          total += monthlyUsage[index];
-          return FlSpot(index.toDouble(), total / 1000); // Convert to kg
+      });
+    } else if (selectedFilter == "month") {
+      DateTime now = DateTime.now();
+      int currentMonth = now.month;
+      int currentYear = now.year;
+
+      List<double> currentMonthWeeklyUsage = List.filled(5, 0);
+
+      final snapshot =
+          await _database.child('users/${_currentUser!.uid}/food_usage').get();
+
+      if (snapshot.exists) {
+        Map<dynamic, dynamic> logs = snapshot.value as Map<dynamic, dynamic>;
+
+        logs.forEach((key, value) {
+          if (value != null &&
+              value['food_dispensed'] != null &&
+              value['time'] != null) {
+            double foodUsed = (value['food_dispensed'] is int)
+                ? (value['food_dispensed'] as int).toDouble()
+                : value['food_dispensed'];
+            DateTime feedDate = DateTime.parse(value['time']);
+
+            if (feedDate.month == currentMonth &&
+                feedDate.year == currentYear) {
+              int weekOfMonth = ((feedDate.day - 1) ~/ 7);
+              currentMonthWeeklyUsage[weekOfMonth] += foodUsed;
+            }
+          }
+        });
+
+        setState(() {
+          chartData = List.generate(
+            5,
+            (index) =>
+                FlSpot(index.toDouble(), currentMonthWeeklyUsage[index] / 1000),
+          );
         });
       }
-    });
+    } else if (selectedFilter == "year") {
+      setState(() {
+        chartData = List.generate(12, (index) {
+          return FlSpot(index.toDouble(), monthlyUsage[index] / 1000);
+        });
+      });
+    }
   }
 
   @override
@@ -120,7 +135,10 @@ class _ReportScreenState extends State<ReportScreen> {
                   padding: EdgeInsets.all(16.0),
                   child: Text(
                     "Report",
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 23,
+                      fontWeight: FontWeight.normal,
+                    ),
                   ),
                 ),
                 Padding(
@@ -135,7 +153,7 @@ class _ReportScreenState extends State<ReportScreen> {
                       ),
                       DropdownButton<String>(
                         value: selectedFilter,
-                        items: ["Week", "Month", "Year"]
+                        items: ["week", "month", "year"]
                             .map((String value) => DropdownMenuItem<String>(
                                   value: value,
                                   child: Text(value),
@@ -179,14 +197,14 @@ class _ReportScreenState extends State<ReportScreen> {
                             sideTitles: SideTitles(
                               showTitles: true,
                               getTitlesWidget: (value, meta) {
-                                if (selectedFilter == "Week") {
+                                if (selectedFilter == "week") {
                                   return Text(
                                     '${value.toInt()} grams',
                                     style: const TextStyle(fontSize: 10),
                                   );
                                 } else {
                                   return Text(
-                                    '${value.toInt()} kg', // Show in kg for Month/Year
+                                    '${value.toStringAsFixed(1)} kg',
                                     style: const TextStyle(fontSize: 10),
                                   );
                                 }
@@ -198,7 +216,7 @@ class _ReportScreenState extends State<ReportScreen> {
                             sideTitles: SideTitles(
                               showTitles: true,
                               getTitlesWidget: (value, meta) {
-                                if (selectedFilter == "Week") {
+                                if (selectedFilter == "week") {
                                   // Weekdays (Mon, Tue, Wed, ...)
                                   List<String> weekdays = [
                                     "Mon",
@@ -213,13 +231,13 @@ class _ReportScreenState extends State<ReportScreen> {
                                     weekdays[value.toInt()],
                                     style: const TextStyle(fontSize: 10),
                                   );
-                                } else if (selectedFilter == "Month") {
+                                } else if (selectedFilter == "month") {
                                   // Weeks of the month (Week 1, Week 2, Week 3, Week 4)
                                   return Text(
-                                    "Week ${value.toInt() + 1}",
+                                    "week ${value.toInt() + 1}",
                                     style: const TextStyle(fontSize: 10),
                                   );
-                                } else if (selectedFilter == "Year") {
+                                } else if (selectedFilter == "year") {
                                   // Month names (Jan, Feb, Mar, ...)
                                   List<String> months = [
                                     "Jan",
@@ -268,6 +286,29 @@ class _ReportScreenState extends State<ReportScreen> {
                             belowBarData: BarAreaData(show: false),
                           ),
                         ],
+                        // Set the Y-axis range dynamically
+                        gridData: const FlGridData(show: true),
+                        minY: selectedFilter == "week"
+                            ? 0
+                            : 0, // Keep minY at 0 for both week and month/year
+                        maxY: selectedFilter == "week"
+                            ? (weeklyUsage.isNotEmpty
+                                ? weeklyUsage.reduce((a, b) => a > b ? a : b) +
+                                    10
+                                : 10)
+                            : (chartData.isNotEmpty
+                                ? chartData
+                                        .map((e) => e.y)
+                                        .reduce((a, b) => a > b ? a : b) +
+                                    0.2
+                                : 1),
+
+                        minX: 0, // Start of X-axis
+                        maxX: selectedFilter == "week"
+                            ? 6.0
+                            : (selectedFilter == "month"
+                                ? 4.0
+                                : 11.0), // 6 for weeks, 4 for months, 11 for years (12 months - 1)
                       ),
                     ),
                   ),
@@ -276,47 +317,10 @@ class _ReportScreenState extends State<ReportScreen> {
                   padding: const EdgeInsets.all(16.0),
                   child: Center(
                     child: Text(
-                      'Total food usage in $selectedFilter view',
+                      'Total food usage in this $selectedFilter',
                       style: const TextStyle(
                           fontSize: 18, fontWeight: FontWeight.bold),
                     ),
-                  ),
-                ),
-                Container(
-                  height:
-                      200, // Adjusted height to fit schedule and toggle only
-                  width: 350,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1), // Shadow color
-                        spreadRadius: 10, // Spread of the shadow
-                        blurRadius: 10, // How much the shadow is blurred
-                        offset:
-                            const Offset(3, 5), // Position of the shadow (x, y)
-                      ),
-                    ],
-                    borderRadius: BorderRadius.circular(25),
-                  ),
-                  child: const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(height: 20),
-                      Padding(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 20.0), // Add horizontal padding
-                        child: Center(
-                          child: Text(
-                            "Feeding Log",
-                            style: TextStyle(
-                              fontSize: 15.0,
-                              color: Colors.black,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
                   ),
                 ),
               ],

@@ -216,7 +216,11 @@ class _FeedTimerPageState extends State<FeedTimerPage> {
         child: Column(
           children: [
             const SizedBox(height: 25),
-            const Text("Set Timer", style: TextStyle(fontSize: 24)),
+            const Text("Timer",
+                style: TextStyle(
+                  fontSize: 23,
+                  fontWeight: FontWeight.normal,
+                )),
             const SizedBox(height: 25),
             Expanded(
               child: Container(

@@ -1,22 +1,56 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_mjpeg/flutter_mjpeg.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 
-class Monitor extends StatelessWidget {
+class Monitor extends StatefulWidget {
   const Monitor({super.key});
+
+  @override
+  State<Monitor> createState() => _MonitorState();
+}
+
+class _MonitorState extends State<Monitor> {
+  List<String> feedingLog = [];
+
+  @override
+  void initState() {
+    super.initState();
+
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      String todayDate = DateTime.now().toString().split(' ')[0];
+      // Reference to feeding log
+      DatabaseReference feedRef = FirebaseDatabase.instance
+          .ref('users/${user.uid}/feedingLog/success/$todayDate');
+
+      // Listen for feeding log updates
+      feedRef.onValue.listen((event) {
+        final data = event.snapshot.value;
+        if (data is List) {
+          // Clean out nulls if any
+          List<String> times = data.whereType<String>().toList();
+          setState(() {
+            feedingLog = times;
+          });
+        }
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(children: [
           Container(
             padding: const EdgeInsets.all(16),
             child: const Text(
-              "Monitor Page",
+              "Monitor",
               style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
+                fontSize: 23,
+                fontWeight: FontWeight.normal,
               ),
             ),
           ),
@@ -33,36 +67,35 @@ class Monitor extends StatelessWidget {
                     border: Border.all(color: Colors.grey, width: 4),
                   ),
                   child: const Mjpeg(
-                    stream: 'http://192.168.0.25/stream',
+                    //stream: 'http://192.168.0.25/stream', //rumah sewa
+                    stream: 'http://192.168.1.8/stream', //rumah
+                    //stream: 'http://192.168.119.21/stream', //hotspot
                     isLive: true,
                     fit: BoxFit.cover,
                   ),
                 ),
                 const SizedBox(height: 20.0),
                 Container(
-                  height:
-                      200, // Adjusted height to fit schedule and toggle only
+                  height: 200,
                   width: 350,
                   decoration: BoxDecoration(
                     color: Colors.white,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1), // Shadow color
-                        spreadRadius: 10, // Spread of the shadow
-                        blurRadius: 10, // How much the shadow is blurred
-                        offset:
-                            const Offset(3, 5), // Position of the shadow (x, y)
+                        color: Colors.black.withOpacity(0.1),
+                        spreadRadius: 10,
+                        blurRadius: 10,
+                        offset: const Offset(3, 5),
                       ),
                     ],
                     borderRadius: BorderRadius.circular(25),
                   ),
-                  child: const Column(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SizedBox(height: 20),
-                      Padding(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 20.0), // Add horizontal padding
+                      const SizedBox(height: 10),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 20.0),
                         child: Center(
                           child: Text(
                             "Feeding Log",
@@ -72,6 +105,22 @@ class Monitor extends StatelessWidget {
                             ),
                           ),
                         ),
+                      ),
+                      const SizedBox(height: 5),
+                      Expanded(
+                        child: feedingLog.isEmpty
+                            ? const Center(
+                                child: Text("No feeding data currently"))
+                            : ListView.builder(
+                                itemCount: feedingLog.length,
+                                itemBuilder: (context, index) {
+                                  return ListTile(
+                                    leading: const Icon(Icons.timer),
+                                    title: Text(
+                                        "Success Feeding At: ${feedingLog[index]}"),
+                                  );
+                                },
+                              ),
                       ),
                     ],
                   ),
