@@ -1,7 +1,9 @@
+import 'package:auto_test/screen/UserDetailPage.dart';
 import 'package:auto_test/screen/auth_page.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:convert';
 
 class AdminPage extends StatefulWidget {
   const AdminPage({super.key});
@@ -27,20 +29,29 @@ class _AdminPageState extends State<AdminPage> {
       List<Map<String, dynamic>> tempList = [];
       Map usersMap = snapshot.value as Map;
 
-      usersMap.forEach((key, value) {
-        // Exclude user if role is explicitly "admin"
+      for (final key in usersMap.keys) {
+        final value = usersMap[key];
         if (value['role'] != 'admin') {
+          // Fetch device power
+          final deviceSnapshot =
+              await usersRef.child('$key/device/power').get();
+          final bool isDeviceOn = deviceSnapshot.value == true;
+
           tempList.add({
             'uid': key,
             'name': value['name'] ?? 'No Name',
             'email': value['email'] ?? 'No Email',
+            'profileImageBase64': value['profileImageBase64'],
+            'devicePower': isDeviceOn,
           });
         }
-      });
+      }
 
-      setState(() {
-        userList = tempList;
-      });
+      if (mounted) {
+        setState(() {
+          userList = tempList;
+        });
+      }
     }
   }
 
@@ -126,11 +137,55 @@ class _AdminPageState extends State<AdminPage> {
                                 borderRadius: BorderRadius.circular(12)),
                             elevation: 2,
                             child: ListTile(
-                              leading: const CircleAvatar(
-                                child: Icon(Icons.person),
-                              ),
+                              leading: user['profileImageBase64'] != null
+                                  ? Container(
+                                      width: 100, // Set the desired width
+                                      height: 100, // Set the desired height
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        image: DecorationImage(
+                                          image: MemoryImage(base64Decode(
+                                              user['profileImageBase64'])),
+                                          fit: BoxFit
+                                              .cover, // Ensures the image is cropped or scaled to fit the container
+                                        ),
+                                      ),
+                                    )
+                                  : Container(
+                                      width: 100, // Set the desired width
+                                      height: 100, // Set the desired height
+                                      decoration: const BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Colors
+                                            .grey, // Default background color
+                                      ),
+                                      child: const Icon(Icons.person),
+                                    ),
                               title: Text(user['name']),
-                              subtitle: Text(user['email']),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(user['email']),
+                                  Text(
+                                    'Device: ${user['devicePower'] == true ? "Online" : "Offline"}',
+                                    style: TextStyle(
+                                      color: user['devicePower'] == true
+                                          ? Colors.green
+                                          : Colors.red,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        UserDetailPage(uid: user['uid']),
+                                  ),
+                                );
+                              },
                               trailing: PopupMenuButton<String>(
                                 onSelected: (value) {
                                   if (value == 'delete') {

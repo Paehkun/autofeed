@@ -89,6 +89,7 @@ class _LoginState extends State<Login> {
             print("User role: $role");
 
             if (role == 'admin') {
+              Navigator.pop(context);
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const AdminPage()),
