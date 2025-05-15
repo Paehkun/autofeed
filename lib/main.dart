@@ -44,8 +44,8 @@ void main() async {
 
   // Initialize Firebase Messaging
   FirebaseMessaging messaging = FirebaseMessaging.instance;
+  await messaging.requestPermission();
 
-  // Request permission for notifications
   NotificationSettings settings = await messaging.requestPermission();
 
   if (settings.authorizationStatus == AuthorizationStatus.authorized) {
@@ -54,7 +54,24 @@ void main() async {
     print("❌ User denied notification permission.");
   }
 
-  runApp(const MyApp()); // No need to call checkFoodLevel() here
+  // FCM Listener: Foreground notification handling
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    RemoteNotification? notification = message.notification;
+    if (notification != null) {
+      print('📩 FCM Message received: ${message.notification!.title}');
+      AwesomeNotifications().createNotification(
+        content: NotificationContent(
+          id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          channelKey: 'basic_channel',
+          title: notification.title,
+          body: notification.body,
+          notificationLayout: NotificationLayout.Default,
+        ),
+      );
+    }
+  });
+
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
