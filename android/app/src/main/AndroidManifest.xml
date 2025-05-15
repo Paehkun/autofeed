@@ -9,6 +9,12 @@
         android:label="Autofeed"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        
+         <!-- Firebase Default Notification Channel -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="default_channel" />
+
         <receiver android:name="me.carda.awesome_notifications.notifications.receivers.ActionReceiver" android:exported="true"/>
 <receiver android:name="me.carda.awesome_notifications.notifications.receivers.DismissedReceiver" android:exported="true"/>
 

@@ -9,9 +9,9 @@ import 'package:flutter/material.dart';
 import 'package:auto_test/screen/FeedTimerPage.dart';
 import 'package:auto_test/screen/report.dart';
 import 'package:auto_test/screen/profile.dart';
-import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:intl/intl.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -88,16 +88,24 @@ class _HomeScreenState extends State<HomeScreen> {
     fetchname();
     fetchFeedSwitchState();
     fetchPowerSwitchState();
-    checkFoodLevel();
     fetchTodaySchedule();
+    subscribeToTopic(currentUser.uid);
   }
 
   final Map<String, List<String>> fishAgeAmountOptions = {
     '24 months and above': ['0–5', '6–10', '11–15', '15 and above'],
     '12–24 months': ['0–5', '6–10', '11–15', '15 and above'],
     '6–12 months': ['0–5', '6–10', '11–15', '15 and above'],
-    'Custom': [],
   };
+
+  void subscribeToTopic(String userId) async {
+    try {
+      await FirebaseMessaging.instance.subscribeToTopic(userId);
+      print("✅ Subscribed to topic: $userId");
+    } catch (e) {
+      print("❌ Error subscribing to topic: $e");
+    }
+  }
 
   Future<void> fetchname() async {
     User? currentUser = FirebaseAuth.instance.currentUser;
@@ -246,41 +254,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void checkFoodLevel() {
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      DatabaseReference feedRef =
-          FirebaseDatabase.instance.ref('users/${user.uid}/foodLevel');
-
-      feedRef.onValue.listen((event) {
-        if (event.snapshot.exists) {
-          String foodLevelString = event.snapshot.value.toString();
-          double foodLevel = double.tryParse(foodLevelString) ?? 0.0;
-
-          print("🔥 Food Level: $foodLevel"); // Debugging
-
-          if (foodLevel <= 20) {
-            print("🚨 Sending Low Food Level Notification...");
-            AwesomeNotifications().createNotification(
-              content: NotificationContent(
-                id: 1,
-                channelKey: 'basic_channel',
-                title: 'Food Level Is Low ⚠️',
-                body:
-                    'Your fish food is at ${foodLevel.toInt()}%. Please refill.',
-                notificationLayout: NotificationLayout.BigText,
-              ),
-            );
-          }
-        } else {
-          print("⚠️ No food level data found.");
-        }
-      });
-    } else {
-      print("❌ User is not logged in.");
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     User? user = FirebaseAuth.instance.currentUser;
@@ -394,15 +367,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       selectedFishAmount =
                           null; // Reset fish amount on age change
                     });
-
-                    // If "Custom" is selected, navigate to FeedTimerPage
-                    if (value == 'Custom') {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const FeedTimerPage()),
-                      );
-                    }
                   },
                   buttonStyleData: ButtonStyleData(
                     height: 50,
