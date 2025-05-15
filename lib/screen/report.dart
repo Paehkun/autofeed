@@ -37,6 +37,11 @@ class _ReportScreenState extends State<ReportScreen> {
       List<double> tempMonthlyUsage = List.filled(12, 0);
       List<double> tempWeeklyUsage = List.filled(7, 0);
 
+      DateTime now = DateTime.now();
+      DateTime startOfWeek =
+          now.subtract(Duration(days: now.weekday - 1)); // Monday
+      DateTime endOfWeek = startOfWeek.add(const Duration(days: 6));
+
       logs.forEach((key, value) {
         if (value != null &&
             value['food_dispensed'] != null &&
@@ -50,8 +55,15 @@ class _ReportScreenState extends State<ReportScreen> {
             int month = feedDate.month - 1;
             int weekday = feedDate.weekday - 1;
 
+            // Monthly usage (no change)
             tempMonthlyUsage[month] += foodUsed;
-            tempWeeklyUsage[weekday] += foodUsed;
+
+            // Weekly usage (only if within current week)
+            if (feedDate.isAfter(
+                    startOfWeek.subtract(const Duration(seconds: 1))) &&
+                feedDate.isBefore(endOfWeek.add(const Duration(days: 1)))) {
+              tempWeeklyUsage[weekday] += foodUsed;
+            }
           }
         }
       });
@@ -61,7 +73,7 @@ class _ReportScreenState extends State<ReportScreen> {
         weeklyUsage = tempWeeklyUsage;
       });
 
-      await updateChartData(); // Call after data is ready
+      await updateChartData();
     }
   }
 
@@ -117,6 +129,29 @@ class _ReportScreenState extends State<ReportScreen> {
           return FlSpot(index.toDouble(), monthlyUsage[index] / 1000);
         });
       });
+    }
+  }
+
+  // Calculate the total usage based on selected filter
+  double getTotalFoodUsage() {
+    if (selectedFilter == "week") {
+      return weeklyUsage.reduce((a, b) => a + b);
+    } else if (selectedFilter == "month") {
+      // Multiply by 1000 because chartData stores in kg
+      return chartData.map((spot) => spot.y * 1000).reduce((a, b) => a + b);
+    } else if (selectedFilter == "year") {
+      return monthlyUsage.reduce((a, b) => a + b);
+    }
+    return 0;
+  }
+
+// Format the total usage as text
+  String getFormattedTotalUsage() {
+    double total = getTotalFoodUsage();
+    if (selectedFilter == "year") {
+      return "${(total / 1000).toStringAsFixed(2)} kg";
+    } else {
+      return "${total.toStringAsFixed(1)} grams";
     }
   }
 
@@ -314,12 +349,39 @@ class _ReportScreenState extends State<ReportScreen> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Center(
-                    child: Text(
-                      'Total food usage in this $selectedFilter',
-                      style: const TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 20),
+                  child: Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    elevation: 4,
+                    color: Colors.white,
+                    shadowColor: Colors.grey.withOpacity(0.3),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 20),
+                      child: Column(
+                        children: [
+                          Text(
+                            'Total Food Usage ${selectedFilter.toUpperCase()}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            getFormattedTotalUsage(),
+                            style: const TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
