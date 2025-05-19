@@ -67,8 +67,8 @@ class _MonitorState extends State<Monitor> {
                     border: Border.all(color: Colors.grey, width: 4),
                   ),
                   child: const Mjpeg(
-                    //stream: 'http://192.168.0.25/stream', //rumah sewa
-                    stream: 'http://192.168.1.8/stream', //rumah
+                    stream: 'http://192.168.0.30/stream', //rumah sewa
+                    // stream: 'http://192.168.1.8/stream', //rumah
                     //stream: 'http://192.168.119.21/stream', //hotspot
                     isLive: true,
                     fit: BoxFit.cover,
