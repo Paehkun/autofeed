@@ -81,6 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String? todaySchedule = "Loading today's schedule...";
   String? selectedFishAge;
   String? selectedFishAmount;
+  final _database = FirebaseDatabase.instance.ref();
 
   @override
   void initState() {
@@ -90,6 +91,97 @@ class _HomeScreenState extends State<HomeScreen> {
     fetchPowerSwitchState();
     fetchTodaySchedule();
     subscribeToTopic(currentUser.uid);
+    _loadUserSelection();
+  }
+
+  Future<void> _loadUserSelection() async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return;
+
+    final snapshot = await _database.child("users/$userId/selection").get();
+    if (snapshot.exists) {
+      final data = Map<String, dynamic>.from(snapshot.value as Map);
+
+      setState(() {
+        if (data['fish_age'] != null &&
+            fishAgeAmountOptions.containsKey(data['fish_age'])) {
+          selectedFishAge = data['fish_age'];
+        }
+        if (selectedFishAge != null &&
+            data['fish_amount'] != null &&
+            fishAgeAmountOptions[selectedFishAge]!
+                .contains(data['fish_amount'])) {
+          selectedFishAmount = data['fish_amount'];
+        }
+      });
+    }
+  }
+
+  Future<void> sendScheduleBasedOnSelection() async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null ||
+        selectedFishAge == null ||
+        selectedFishAmount == null) {
+      return;
+    }
+
+    final database = FirebaseDatabase.instance.ref();
+
+    int feedTimesPerDay = 0;
+
+    // Determine feeding frequency
+    if (selectedFishAmount == '0–5') {
+      feedTimesPerDay = 3;
+    } else if (selectedFishAmount == '6–10') {
+      feedTimesPerDay = 4;
+    } else if (selectedFishAmount == '11–15') {
+      feedTimesPerDay = 5;
+    } else {
+      return; // Invalid
+    }
+
+    // Define feeding times
+    List<String> feedTimes;
+    if (feedTimesPerDay == 3) {
+      feedTimes = ['08:00 AM', '01:00 PM', '06:00 PM'];
+    } else if (feedTimesPerDay == 4) {
+      feedTimes = ['08:00 AM', '12:00 PM', '04:00 PM', '08:00 PM'];
+    } else {
+      feedTimes = ['07:00 AM', '11:00 AM', '02:00 PM', '05:00 PM', '08:00 PM'];
+    }
+
+    final days = [
+      'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday'
+    ];
+
+    // Save selection
+    await database.child("users/$userId/selection").set({
+      'fish_age': selectedFishAge,
+      'fish_amount': selectedFishAmount,
+    });
+
+    // Save schedule
+    for (int i = 0; i < feedTimes.length; i++) {
+      String timerId = 'timer${i + 1}';
+
+      await database.child("users/$userId/schedule/$timerId").set({
+        'day': days.join(", "),
+        'time': feedTimes[i],
+        'enabled': true,
+      });
+    }
+
+    // Delete unused timers (optional cleanup)
+    for (int i = feedTimes.length + 1; i <= 5; i++) {
+      String timerId = 'timer$i';
+      await database.child("users/$userId/schedule/$timerId").remove();
+    }
   }
 
   final Map<String, List<String>> fishAgeAmountOptions = {
@@ -452,7 +544,26 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               const SizedBox(height: 15),
-
+              ElevatedButton(
+                onPressed: () {
+                  if (selectedFishAge != null && selectedFishAmount != null) {
+                    sendScheduleBasedOnSelection();
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content:
+                              Text('Please select both fish age and amount')),
+                    );
+                  }
+                },
+                child: const Text(
+                  'Save Schedule',
+                  style: TextStyle(
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 15.0),
               Container(
                 height: 220, // Adjusted height to fit schedule and toggle only
                 width: 350,
