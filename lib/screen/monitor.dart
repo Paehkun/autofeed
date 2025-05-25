@@ -66,12 +66,14 @@ class _MonitorState extends State<Monitor> {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.grey, width: 4),
                   ),
-                  child: const Mjpeg(
-                    stream: 'http://192.168.0.30/stream', //rumah sewa
-                    // stream: 'http://192.168.1.8/stream', //rumah
-                    //stream: 'http://192.168.119.21/stream', //hotspot
-                    isLive: true,
-                    fit: BoxFit.cover,
+                  child: Transform.rotate(
+                    angle: 3.1416, // pi radians = 180 degrees
+                    child: const Mjpeg(
+                      //stream: 'http://192.168.0.8/stream',//rumah sewa
+                      stream: 'http://192.168.216.21/stream',
+                      isLive: true,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20.0),
