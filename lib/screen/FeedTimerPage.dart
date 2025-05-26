@@ -211,21 +211,33 @@ class _FeedTimerPageState extends State<FeedTimerPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF5F7FA),
       body: SafeArea(
-        child: Column(
-          children: [
-            const SizedBox(height: 25),
-            const Text("Timer",
-                style: TextStyle(
-                  fontSize: 23,
-                  fontWeight: FontWeight.normal,
-                )),
-            const SizedBox(height: 25),
-            Expanded(
-              child: Container(
-                color: Colors.white,
-                child: ListView.builder(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Title
+                const SizedBox(height: 16),
+                Center(
+                  child: Text(
+                    'Feeding Schedule',
+                    style: TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue.shade800,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Feed Time Cards
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
                   itemCount: _feedTimes.length + 1,
                   itemBuilder: (context, index) {
                     if (index == _feedTimes.length) {
@@ -233,22 +245,18 @@ class _FeedTimerPageState extends State<FeedTimerPage> {
                         onTap: () => _pickTime(context),
                         child: Container(
                           height: 60,
-                          margin: const EdgeInsets.all(8.0),
+                          margin: const EdgeInsets.symmetric(vertical: 8.0),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black
-                                    .withOpacity(0.1), // Shadow color
-                                spreadRadius: 10, // Spread of the shadow
-                                blurRadius:
-                                    10, // How much the shadow is blurred
-                                offset: const Offset(
-                                    3, 5), // Position of the shadow (x, y)
+                                color: Colors.black.withOpacity(0.05),
+                                spreadRadius: 2,
+                                blurRadius: 6,
+                                offset: const Offset(2, 4),
                               ),
                             ],
-                            borderRadius:
-                                BorderRadius.circular(25), // Rounded corners
+                            borderRadius: BorderRadius.circular(20),
                           ),
                           child: const Center(
                             child:
@@ -257,76 +265,94 @@ class _FeedTimerPageState extends State<FeedTimerPage> {
                         ),
                       );
                     }
+
                     return Dismissible(
-                        key: Key(_feedTimes[index]['id'] ??
-                            'defaultKey'), // Use a fallback value if 'id' is null
-                        direction: DismissDirection.endToStart,
-                        background: Container(
+                      key: Key(_feedTimes[index]['id'] ?? 'defaultKey'),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        decoration: BoxDecoration(
                           color: Colors.red,
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: const Icon(Icons.delete,
-                              color: Colors.white, size: 30),
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                        onDismissed: (direction) => _deleteSchedule(index),
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(
-                              vertical: 4.0, horizontal: 8.0),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black
-                                    .withOpacity(0.1), // Shadow color
-                                spreadRadius: 10, // Spread of the shadow
-                                blurRadius:
-                                    10, // How much the shadow is blurred
-                                offset: const Offset(
-                                    3, 5), // Position of the shadow (x, y)
-                              ),
-                            ],
-                            borderRadius:
-                                BorderRadius.circular(25), // Rounded corners
-                          ),
-                          child: ListTile(
-                            title: GestureDetector(
-                              onTap: () => _pickTime(context, index),
-                              child: Text(
-                                _feedTimes[index]['time'] ??
-                                    'No Time Set', // Fallback for time
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  color: _feedTimes[index]['enabled']
-                                      ? Colors.black
-                                      : Colors.grey,
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: const Icon(Icons.delete,
+                            color: Colors.white, size: 30),
+                      ),
+                      onDismissed: (direction) => _deleteSchedule(index),
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(vertical: 8.0),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              spreadRadius: 2,
+                              blurRadius: 6,
+                              offset: const Offset(2, 4),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            // Time
+                            Expanded(
+                              flex: 2,
+                              child: GestureDetector(
+                                onTap: () => _pickTime(context, index),
+                                child: Text(
+                                  _feedTimes[index]['time'] ?? 'No Time Set',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w500,
+                                    color: _feedTimes[index]['enabled']
+                                        ? Colors.black
+                                        : Colors.grey,
+                                  ),
                                 ),
                               ),
                             ),
-                            subtitle: GestureDetector(
-                              onTap: () => _selectDays(context, index),
-                              child: Text(
-                                _feedTimes[index]['days'].isEmpty
-                                    ? "Select Days"
-                                    : _feedTimes[index]['days'].join(", "),
-                                style: TextStyle(
-                                  color: _feedTimes[index]['enabled']
-                                      ? Colors.black
-                                      : Colors.grey,
+                            const SizedBox(width: 10),
+
+                            // Days
+                            Expanded(
+                              flex: 3,
+                              child: GestureDetector(
+                                onTap: () => _selectDays(context, index),
+                                child: Text(
+                                  _feedTimes[index]['days'].isEmpty
+                                      ? "Select Days"
+                                      : _feedTimes[index]['days'].join(", "),
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    color: _feedTimes[index]['enabled']
+                                        ? Colors.black
+                                        : Colors.grey,
+                                  ),
                                 ),
                               ),
                             ),
-                            trailing: Switch(
+
+                            // Toggle
+                            Switch(
                               value: _feedTimes[index]['enabled'],
                               onChanged: (value) => _toggleFeedTime(index),
                               activeColor: Colors.blue,
                             ),
-                          ),
-                        ));
+                          ],
+                        ),
+                      ),
+                    );
                   },
                 ),
-              ),
+
+                const SizedBox(height: 40),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -361,7 +387,12 @@ class _MultiSelectDialogState extends State<MultiSelectDialog> {
       content: Column(
           children: widget.daysOfWeek.map((day) {
         return CheckboxListTile(
-          title: Text(day),
+          title: Text(
+            day,
+            style: const TextStyle(
+              fontSize: 15,
+            ),
+          ),
           value: _tempSelectedDays.contains(day),
           onChanged: (bool? value) {
             setState(() {

@@ -118,8 +118,7 @@ class _ReportScreenState extends State<ReportScreen> {
         setState(() {
           chartData = List.generate(
             5,
-            (index) =>
-                FlSpot(index.toDouble(), currentMonthWeeklyUsage[index] / 1000),
+            (index) => FlSpot(index.toDouble(), currentMonthWeeklyUsage[index]),
           );
         });
       }
@@ -138,7 +137,7 @@ class _ReportScreenState extends State<ReportScreen> {
       return weeklyUsage.reduce((a, b) => a + b);
     } else if (selectedFilter == "month") {
       // Multiply by 1000 because chartData stores in kg
-      return chartData.map((spot) => spot.y * 1000).reduce((a, b) => a + b);
+      return chartData.map((spot) => spot.y).reduce((a, b) => a + b);
     } else if (selectedFilter == "year") {
       return monthlyUsage.reduce((a, b) => a + b);
     }
@@ -155,24 +154,45 @@ class _ReportScreenState extends State<ReportScreen> {
     }
   }
 
+  List<String> _getMonthWeekDateRanges() {
+    DateTime now = DateTime.now();
+    int year = now.year;
+    int month = now.month;
+
+    List<String> ranges = [];
+    int daysInMonth = DateTime(year, month + 1, 0).day;
+
+    for (int i = 0; i < 5; i++) {
+      int startDay = i * 7 + 1;
+      int endDay = ((i + 1) * 7).clamp(1, daysInMonth);
+      if (startDay > daysInMonth) break;
+
+      // Format: "1-7", "8-14", etc.
+      ranges.add("$startDay-$endDay");
+    }
+    return ranges;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF5F7FA),
       body: SafeArea(
         child: SingleChildScrollView(
           // Wrap the content inside the scroll view
           child: Container(
-            color: Colors.white,
+            color: const Color(0xFFF5F7FA),
             child: Column(
               children: [
-                const Padding(
-                  padding: EdgeInsets.all(16.0),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
                   child: Text(
-                    "Report",
+                    'Report',
                     style: TextStyle(
-                      fontSize: 23,
-                      fontWeight: FontWeight.normal,
+                      fontSize: 30,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue.shade800,
+                      letterSpacing: 1.2,
                     ),
                   ),
                 ),
@@ -239,7 +259,7 @@ class _ReportScreenState extends State<ReportScreen> {
                                   );
                                 } else {
                                   return Text(
-                                    '${value.toStringAsFixed(1)} kg',
+                                    '${value.toStringAsFixed(1)} g',
                                     style: const TextStyle(fontSize: 10),
                                   );
                                 }
@@ -251,8 +271,31 @@ class _ReportScreenState extends State<ReportScreen> {
                             sideTitles: SideTitles(
                               showTitles: true,
                               getTitlesWidget: (value, meta) {
+                                if (value % 1 != 0) {
+                                  return const SizedBox.shrink();
+                                }
+                                int index = value.toInt();
+
+                                Widget buildLabel(String text) {
+                                  if (index == 0) {
+                                    // Add extra left padding to the first label
+                                    return Padding(
+                                      padding: const EdgeInsets.only(
+                                          left: 8.0), // adjust 8.0 as needed
+                                      child: Text(
+                                        text,
+                                        style: const TextStyle(fontSize: 10),
+                                      ),
+                                    );
+                                  } else {
+                                    return Text(
+                                      text,
+                                      style: const TextStyle(fontSize: 10),
+                                    );
+                                  }
+                                }
+
                                 if (selectedFilter == "week") {
-                                  // Weekdays (Mon, Tue, Wed, ...)
                                   List<String> weekdays = [
                                     "Mon",
                                     "Tue",
@@ -262,18 +305,20 @@ class _ReportScreenState extends State<ReportScreen> {
                                     "Sat",
                                     "Sun"
                                   ];
-                                  return Text(
-                                    weekdays[value.toInt()],
-                                    style: const TextStyle(fontSize: 10),
-                                  );
+                                  if (index < weekdays.length) {
+                                    return buildLabel(weekdays[index]);
+                                  } else {
+                                    return const SizedBox.shrink();
+                                  }
                                 } else if (selectedFilter == "month") {
-                                  // Weeks of the month (Week 1, Week 2, Week 3, Week 4)
-                                  return Text(
-                                    "week ${value.toInt() + 1}",
-                                    style: const TextStyle(fontSize: 10),
-                                  );
+                                  List<String> weekDateRanges =
+                                      _getMonthWeekDateRanges();
+                                  if (index < weekDateRanges.length) {
+                                    return buildLabel(weekDateRanges[index]);
+                                  } else {
+                                    return const SizedBox.shrink();
+                                  }
                                 } else if (selectedFilter == "year") {
-                                  // Month names (Jan, Feb, Mar, ...)
                                   List<String> months = [
                                     "Jan",
                                     "Feb",
@@ -288,16 +333,13 @@ class _ReportScreenState extends State<ReportScreen> {
                                     "Nov",
                                     "Dec"
                                   ];
-                                  int monthIndex = value.toInt();
-                                  return Text(
-                                    months[monthIndex],
-                                    style: const TextStyle(fontSize: 10),
-                                  );
+                                  if (index < months.length) {
+                                    return buildLabel(months[index]);
+                                  } else {
+                                    return const SizedBox.shrink();
+                                  }
                                 } else {
-                                  return Text(
-                                    "M${value.toInt()}",
-                                    style: const TextStyle(fontSize: 10),
-                                  );
+                                  return buildLabel("M$index");
                                 }
                               },
                             ),

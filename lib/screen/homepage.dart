@@ -1,10 +1,8 @@
-import 'dart:math';
 import 'package:animated_toggle_switch/animated_toggle_switch.dart';
 import 'package:auto_test/screen/auth_page.dart';
 import 'package:auto_test/screen/monitor.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:auto_test/screen/FeedTimerPage.dart';
 import 'package:auto_test/screen/report.dart';
@@ -136,6 +134,8 @@ class _HomeScreenState extends State<HomeScreen> {
       feedTimesPerDay = 4;
     } else if (selectedFishAmount == '11–15') {
       feedTimesPerDay = 5;
+    } else if (selectedFishAmount == '15 and above') {
+      feedTimesPerDay = 5;
     } else {
       return; // Invalid
     }
@@ -145,9 +145,9 @@ class _HomeScreenState extends State<HomeScreen> {
     if (feedTimesPerDay == 3) {
       feedTimes = ['08:00 AM', '01:00 PM', '06:00 PM'];
     } else if (feedTimesPerDay == 4) {
-      feedTimes = ['08:00 AM', '12:00 PM', '04:00 PM', '08:00 PM'];
+      feedTimes = ['08:00 AM', '10:00 AM', '01:00 PM', '04:00 PM'];
     } else {
-      feedTimes = ['07:00 AM', '11:00 AM', '02:00 PM', '05:00 PM', '08:00 PM'];
+      feedTimes = ['08:00 AM', '10:00 AM', '12:00 PM', '03:00 PM', '05:00 PM'];
     }
 
     final days = [
@@ -280,7 +280,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       setState(() {
         todaySchedule = todayTimers.isNotEmpty
-            ? "$today, $todayDate :\n${todayTimers.join("\n")}" // Show day and date
+            ? "$today, $todayDate :\n${todayTimers.asMap().entries.map((entry) => "Slot ${entry.key + 1}: ${entry.value}").join("\n")}"
             : "No schedule for today.";
       });
     } else {
@@ -365,413 +365,459 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF5F7FA), // Soft light background
       body: SafeArea(
         child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 10),
+              // Top bar with logout
               Row(
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  IconButton(
-                    onPressed: () {
-                      // Show confirmation dialog before logging out
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            title: const Text('Confirm Logout'),
-                            content:
-                                const Text('Are you sure you want to log out?'),
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.of(context)
-                                      .pop(); // Close the dialog
-                                },
-                                child: const Text('No'),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  signUserOut(
-                                      context); // Call the sign out function
-                                  Navigator.of(context)
-                                      .pop(); // Close the dialog
-                                },
-                                child: const Text('Yes'),
-                              ),
-                            ],
-                          );
-                        },
-                      );
-                    },
-                    icon: const Icon(
-                      Icons.logout,
-                      color: Colors.black,
+                  Tooltip(
+                    message: 'Logout',
+                    child: IconButton(
+                      icon: const Icon(Icons.logout, color: Colors.black),
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(15)),
+                              title: const Text('Confirm Logout'),
+                              content: const Text(
+                                  'Are you sure you want to log out?'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.of(context).pop(),
+                                  child: const Text('No'),
+                                ),
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.redAccent,
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8)),
+                                  ),
+                                  onPressed: () {
+                                    signUserOut(context);
+                                    Navigator.of(context).pop();
+                                  },
+                                  child: const Text('Yes'),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      },
                     ),
                   ),
                 ],
               ),
-
-              //tajuk
-              const Text(
+              Text(
                 'AutoFeed',
                 style: TextStyle(
-                  fontSize: 23.0,
+                  fontSize: 30,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                  color: Colors.blue.shade800,
+                  letterSpacing: 1.2,
                 ),
               ),
+              const SizedBox(height: 6),
               Text(
                 name ?? 'Loading...',
-                style: const TextStyle(
-                  fontSize: 15.0,
-                  color: Colors.black,
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.grey.shade700,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(height: 15),
-              DropdownButtonHideUnderline(
-                child: DropdownButton2<String>(
-                  isExpanded: true,
-                  hint: const Text(
-                    'Select Fish Age',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.black,
-                    ),
-                  ),
-                  items: fishAgeAmountOptions.keys.map((item) {
-                    return DropdownMenuItem<String>(
-                      value: item,
-                      child: Text(
-                        item,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.black,
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                  value: selectedFishAge,
-                  onChanged: (value) {
-                    setState(() {
-                      selectedFishAge = value;
-                      selectedFishAmount =
-                          null; // Reset fish amount on age change
-                    });
-                  },
-                  buttonStyleData: ButtonStyleData(
-                    height: 50,
-                    width: 200,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: Colors.black26,
-                      ),
-                      color: Colors.white,
-                    ),
-                    elevation: 2,
-                  ),
-                  dropdownStyleData: DropdownStyleData(
-                    maxHeight: 200,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
-                      color: Colors.white,
-                    ),
-                  ),
-                  menuItemStyleData: const MenuItemStyleData(
-                    height: 40,
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 15),
-              // Second Dropdown: Select Fish Amount based on Fish Age
-              if (selectedFishAge != null && selectedFishAge != 'Custom')
-                DropdownButtonHideUnderline(
-                  child: DropdownButton2<String>(
-                    isExpanded: true,
-                    hint: const Text(
-                      'Select Fish Amount',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.black,
-                      ),
-                    ),
-                    items: fishAgeAmountOptions[selectedFishAge]!.map((item) {
-                      return DropdownMenuItem<String>(
-                        value: item,
-                        child: Text(
-                          item,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.black,
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                    value: selectedFishAmount,
-                    onChanged: (value) {
-                      setState(() {
-                        selectedFishAmount = value;
-                      });
-                    },
-                    buttonStyleData: ButtonStyleData(
-                      height: 50,
-                      width: 200,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: Colors.black26,
-                        ),
-                        color: Colors.white,
-                      ),
-                      elevation: 2,
-                    ),
-                    dropdownStyleData: DropdownStyleData(
-                      maxHeight: 200,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(14),
-                        color: Colors.white,
-                      ),
-                    ),
-                    menuItemStyleData: const MenuItemStyleData(
-                      height: 40,
-                      padding: EdgeInsets.symmetric(horizontal: 16),
-                    ),
-                  ),
-                ),
-              const SizedBox(height: 15),
-              ElevatedButton(
-                onPressed: () {
-                  if (selectedFishAge != null && selectedFishAmount != null) {
-                    sendScheduleBasedOnSelection();
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content:
-                              Text('Please select both fish age and amount')),
-                    );
-                  }
-                },
-                child: const Text(
-                  'Save Schedule',
-                  style: TextStyle(
-                    color: Colors.black,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 15.0),
+
+              const SizedBox(height: 30),
+
+              // Dropdown Card Container
               Container(
-                height: 220, // Adjusted height to fit schedule and toggle only
-                width: 350,
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: Colors.white,
+                  borderRadius: BorderRadius.circular(25),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1), // Shadow color
-                      spreadRadius: 10, // Spread of the shadow
-                      blurRadius: 10, // How much the shadow is blurred
-                      offset:
-                          const Offset(3, 5), // Position of the shadow (x, y)
+                      color: Colors.black.withOpacity(0.07),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
                     ),
                   ],
-                  borderRadius: BorderRadius.circular(25),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 5),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20.0), // Add horizontal padding
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Center(
-                            child: Text(
-                              "Schedule",
-                              style: TextStyle(
-                                fontSize: 18.0,
-                                color: Colors.black,
+                    const Text(
+                      'Select Fish Age',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.blueGrey,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Fish Age Dropdown
+                    DropdownButtonHideUnderline(
+                      child: DropdownButton2<String>(
+                        isExpanded: true,
+                        hint: const Text(
+                          'Add Fish Age',
+                          style:
+                              TextStyle(fontSize: 16, color: Colors.blueGrey),
+                        ),
+                        items: fishAgeAmountOptions.keys.map((item) {
+                          return DropdownMenuItem<String>(
+                            value: item,
+                            child: Text(item,
+                                style: const TextStyle(fontSize: 16)),
+                          );
+                        }).toList(),
+                        value: selectedFishAge,
+                        onChanged: (value) {
+                          setState(() {
+                            selectedFishAge = value;
+                            selectedFishAmount = null;
+                          });
+                        },
+                        buttonStyleData: ButtonStyleData(
+                          height: 55,
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(15),
+                            border: Border.all(color: Colors.blue.shade200),
+                            color: Colors.blue.shade50,
+                          ),
+                          elevation: 0,
+                        ),
+                        dropdownStyleData: DropdownStyleData(
+                          maxHeight: 220,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(15),
+                            color: Colors.white,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 10,
+                                offset: const Offset(0, 5),
                               ),
+                            ],
+                          ),
+                        ),
+                        menuItemStyleData: const MenuItemStyleData(
+                          height: 45,
+                          padding: EdgeInsets.symmetric(horizontal: 20),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 25),
+
+                    const Text(
+                      'Select Fish Amount',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.blueGrey,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Fish Amount Dropdown
+                    if (selectedFishAge != null && selectedFishAge != 'Custom')
+                      DropdownButtonHideUnderline(
+                        child: DropdownButton2<String>(
+                          isExpanded: true,
+                          hint: const Text(
+                            'Add Fish Amount',
+                            style:
+                                TextStyle(fontSize: 16, color: Colors.blueGrey),
+                          ),
+                          items: fishAgeAmountOptions[selectedFishAge]!
+                              .map((item) {
+                            return DropdownMenuItem<String>(
+                              value: item,
+                              child: Text(item,
+                                  style: const TextStyle(fontSize: 16)),
+                            );
+                          }).toList(),
+                          value: selectedFishAmount,
+                          onChanged: (value) {
+                            setState(() {
+                              selectedFishAmount = value;
+                            });
+                          },
+                          buttonStyleData: ButtonStyleData(
+                            height: 55,
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(15),
+                              border: Border.all(color: Colors.blue.shade200),
+                              color: Colors.blue.shade50,
+                            ),
+                            elevation: 0,
+                          ),
+                          dropdownStyleData: DropdownStyleData(
+                            maxHeight: 220,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(15),
+                              color: Colors.white,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 5),
+                                ),
+                              ],
                             ),
                           ),
-                          Text(
-                            todaySchedule ?? "No feeding schedule today.",
-                            style: const TextStyle(
-                              fontSize: 18.0,
-                              color: Colors.black,
-                            ),
+                          menuItemStyleData: const MenuItemStyleData(
+                            height: 45,
+                            padding: EdgeInsets.symmetric(horizontal: 20),
                           ),
-                        ],
+                        ),
+                      ),
+
+                    const SizedBox(height: 25),
+
+                    // Save Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue.shade700,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          elevation: 5,
+                        ),
+                        onPressed: () {
+                          if (selectedFishAge != null &&
+                              selectedFishAmount != null) {
+                            sendScheduleBasedOnSelection();
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      'Please select both fish age and amount')),
+                            );
+                          }
+                        },
+                        child: const Text(
+                          'Save',
+                          style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white),
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 15),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  Container(
-                    height: 200,
-                    width: 150,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1), // Shadow color
-                          spreadRadius: 7, // Spread of the shadow
-                          blurRadius: 10, // How much the shadow is blurred
-                          offset: const Offset(
-                              3, 5), // Position of the shadow (x, y)
-                        ),
-                      ],
-                      borderRadius: BorderRadius.circular(25),
+              const SizedBox(height: 35),
+
+              // Schedule display card
+              Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(vertical: 25, horizontal: 20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(25),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
                     ),
-                    child: Center(
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Today's Feeding Schedule",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.blue.shade900,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    if (todaySchedule != null &&
+                        todaySchedule!.contains("Slot")) ...[
+                      Text(
+                        todaySchedule!.split(":")[0], // Show date line only
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      ...todaySchedule!
+                          .split("\n")
+                          .skip(1)
+                          .map((line) => Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 2),
+                                child: Text(
+                                  line,
+                                  style: const TextStyle(fontSize: 16),
+                                ),
+                              )),
+                    ] else
+                      Text(
+                        todaySchedule ?? "No feeding schedule today.",
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                            fontSize: 18, color: Colors.black87),
+                      ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 40),
+
+              // Food Level and Device Controls Row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  // Food Level Card
+                  Expanded(
+                    child: Container(
+                      height: 240,
+                      margin: const EdgeInsets.only(right: 10),
+                      padding: const EdgeInsets.symmetric(vertical: 25),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(25),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                      ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.start,
                         children: [
-                          const Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: Text(
-                              'Food Level',
-                              style: TextStyle(
-                                fontSize: 16.0,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
+                          Text(
+                            "Food Level",
+                            style: TextStyle(
+                              fontSize: 18, // smaller font
+                              fontWeight: FontWeight.bold,
+                              color: Colors.deepPurple.shade700,
                             ),
                           ),
-                          const SizedBox(height: 15),
-                          // Fetch data from Firebase
+                          const SizedBox(height: 25),
                           displayFoodLevelCircular(realTimeValue),
                         ],
                       ),
                     ),
                   ),
-                  Container(
-                    height: 200,
-                    width: 150,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          spreadRadius: 7,
-                          blurRadius: 10,
-                          offset: const Offset(3, 5),
-                        ),
-                      ],
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Image.asset(
-                            'assets/images/feeder.png',
-                            width: 100,
-                            height: 100,
-                            fit: BoxFit.cover,
+
+                  // Device Control Card
+                  Expanded(
+                    child: Container(
+                      height: 240,
+                      margin: const EdgeInsets.only(left: 10),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 15, horizontal: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(25),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
                           ),
-                        ),
-                        const Text(
-                          "Device",
-                          style: TextStyle(
-                            fontSize: 16.0,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        DefaultTextStyle.merge(
-                            style: const TextStyle(
-                              color: Colors.black,
-                              fontSize: 13.0,
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            "Device Status",
+                            style: TextStyle(
+                              fontSize: 18, // smaller font
                               fontWeight: FontWeight.bold,
+                              color: Colors.deepPurple.shade700,
                             ),
-                            child: IconTheme.merge(
-                              data: const IconThemeData(color: Colors.white),
-                              child: AnimatedToggleSwitch.dual(
-                                current: powerSwitch,
-                                first: false,
-                                second: true,
-                                spacing: 20,
-                                animationDuration:
-                                    const Duration(milliseconds: 600),
-                                style: const ToggleStyle(
-                                  borderColor: Colors.transparent,
-                                  indicatorColor: Colors.white,
-                                  backgroundColor: Colors.black,
+                          ),
+                          const SizedBox(height: 10),
+                          Image.asset(
+                            'assets/images/feeder.png',
+                            width: 110,
+                            height: 110,
+                            fit: BoxFit.contain,
+                          ),
+                          const SizedBox(height: 10),
+                          AnimatedToggleSwitch.dual(
+                            current: powerSwitch,
+                            first: false,
+                            second: true,
+                            height: 42,
+                            borderWidth: 3,
+                            spacing: 22,
+                            animationDuration:
+                                const Duration(milliseconds: 600),
+                            style: ToggleStyle(
+                              borderColor: powerSwitch
+                                  ? Colors.blue.shade700
+                                  : Colors.red.shade700,
+                              indicatorColor: powerSwitch
+                                  ? Colors.blueAccent
+                                  : Colors.redAccent,
+                              backgroundColor: powerSwitch
+                                  ? Colors.blue.shade100
+                                  : Colors.red.shade100,
+                            ),
+                            onChanged: (value) {
+                              setState(() => powerSwitch = value);
+                              sendPowerData(value);
+                            },
+                            iconBuilder: (value) => Icon(
+                              Icons.power_settings_new_rounded,
+                              color: powerSwitch
+                                  ? Colors.blue.shade700
+                                  : Colors.red.shade700,
+                              size: 20, // smaller icon
+                            ),
+                            textBuilder: (value) => Center(
+                              child: Text(
+                                value ? 'Active' : 'Inactive',
+                                style: TextStyle(
+                                  color: powerSwitch
+                                      ? Colors.blue.shade900
+                                      : Colors.red.shade900,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12, // smaller text
                                 ),
-                                customStyleBuilder: (context, local, global) {
-                                  if (global.position <= 0) {
-                                    return ToggleStyle(
-                                      backgroundColor: Colors.grey[300],
-                                    );
-                                  }
-                                  return ToggleStyle(
-                                      backgroundGradient:
-                                          LinearGradient(colors: [
-                                    Colors.green,
-                                    Colors.grey[300]!
-                                  ], stops: [
-                                    global.position -
-                                        (1 -
-                                                2 *
-                                                    max(
-                                                        0,
-                                                        global.position -
-                                                            0.5)) *
-                                            0.7,
-                                    global.position +
-                                        max(0, 2 * (global.position - 0.5)) *
-                                            0.7,
-                                  ]));
-                                },
-                                borderWidth: 3,
-                                height: 40,
-                                loadingIconBuilder: (context, global) =>
-                                    CupertinoActivityIndicator(
-                                  color: Color.lerp(Colors.red[800],
-                                      Colors.green, global.position),
-                                ),
-                                onChanged: (value) {
-                                  setState(() => powerSwitch = value);
-                                  // Send power status to Firebase
-                                  sendPowerData(value);
-                                },
-                                iconBuilder: (value) => value
-                                    ? const Icon(
-                                        Icons.power_settings_new_rounded,
-                                        color: Colors.black,
-                                        size: 22,
-                                      )
-                                    : const Icon(
-                                        Icons.power_settings_new_rounded,
-                                        color: Colors.black,
-                                        size: 22,
-                                      ),
-                                textBuilder: (value) => value
-                                    ? const Center(
-                                        child: Text('Active'),
-                                      )
-                                    : const Center(
-                                        child: Text('Inactive'),
-                                      ),
                               ),
-                            )),
-                      ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 15),
+
+              const SizedBox(height: 30),
             ],
           ),
         ),
@@ -787,13 +833,17 @@ Widget displayFoodLevelCircular(String foodLevelString) {
     alignment: Alignment.center,
     children: [
       SizedBox(
-        width: 90,
-        height: 90,
+        width: 120,
+        height: 120,
         child: CircularProgressIndicator(
           value: foodLevel / 100,
           backgroundColor: Colors.grey[300],
-          valueColor: const AlwaysStoppedAnimation(Colors.red),
-          strokeWidth: 14,
+          valueColor: AlwaysStoppedAnimation<Color>(
+            foodLevel >= 60
+                ? Colors.green
+                : (foodLevel >= 21 ? Colors.orange : Colors.red),
+          ),
+          strokeWidth: 20,
         ),
       ),
       Text(

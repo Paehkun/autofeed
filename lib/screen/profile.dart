@@ -203,9 +203,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFF5F7FA),
         title: const Text(
           'Profile',
           style: TextStyle(
@@ -216,7 +216,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         leading: IconButton(
           onPressed: () {
-            // Show confirmation dialog before logging out
             showDialog(
               context: context,
               builder: (BuildContext context) {
@@ -226,14 +225,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   actions: [
                     TextButton(
                       onPressed: () {
-                        Navigator.of(context).pop(); // Close the dialog
+                        Navigator.of(context).pop();
                       },
                       child: const Text('No'),
                     ),
                     TextButton(
                       onPressed: () {
-                        signUserOut(context); // Call the sign out function
-                        Navigator.of(context).pop(); // Close the dialog
+                        signUserOut(context);
+                        Navigator.of(context).pop();
                       },
                       child: const Text('Yes'),
                     ),
@@ -254,7 +253,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 20.0),
           Center(
             child: GestureDetector(
-              onTap: pickImage, // Call pickImage on tap
+              onTap: pickImage,
               child: CircleAvatar(
                 radius: 60.0,
                 backgroundColor: Colors.grey[400],
@@ -293,7 +292,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 20.0),
                 TextField(
                   controller: newPasswordController,
-                  obscureText: true, // Hide the password text
+                  obscureText: true,
                   decoration: const InputDecoration(
                     labelText: 'New Password',
                     border: OutlineInputBorder(),
@@ -302,7 +301,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 20.0),
                 TextField(
                   controller: confirmPasswordController,
-                  obscureText: true, // Hide the password text
+                  obscureText: true,
                   decoration: const InputDecoration(
                     labelText: 'Confirm New Password',
                     border: OutlineInputBorder(),
@@ -315,23 +314,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ElevatedButton(
                       onPressed: cancelChanges,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        padding:
-                            EdgeInsets.zero, // Remove default button padding
+                        backgroundColor: Colors.blue.shade700,
+                        padding: EdgeInsets.zero,
                         shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(9), // Rounded corners
+                          borderRadius: BorderRadius.circular(9),
                         ),
                       ),
                       child: SizedBox(
-                        width: 100, // Ensure sufficient width
-                        height: 50, // Ensure sufficient height
+                        width: 100,
+                        height: 50,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              vertical: 12,
-                              horizontal: 20), // Add padding around the text
+                              vertical: 12, horizontal: 20),
                           decoration: BoxDecoration(
-                            color: Colors.black,
+                            color: Colors.blue.shade700,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: const Center(
@@ -340,7 +336,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 14.0, // Adjust font size as needed
+                                fontSize: 14.0,
                               ),
                             ),
                           ),
@@ -350,23 +346,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ElevatedButton(
                       onPressed: saveChanges,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        padding:
-                            EdgeInsets.zero, // Remove default button padding
+                        backgroundColor: Colors.blue.shade700,
+                        padding: EdgeInsets.zero,
                         shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(9), // Rounded corners
+                          borderRadius: BorderRadius.circular(9),
                         ),
                       ),
                       child: SizedBox(
-                        width: 100, // Ensure sufficient width
-                        height: 50, // Ensure sufficient height
+                        width: 100,
+                        height: 50,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              vertical: 12,
-                              horizontal: 20), // Add padding around the text
+                              vertical: 12, horizontal: 20),
                           decoration: BoxDecoration(
-                            color: Colors.black,
+                            color: Colors.blue.shade700,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: const Center(
@@ -375,7 +368,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 14.0, // Adjust font size as needed
+                                fontSize: 14.0,
                               ),
                             ),
                           ),
@@ -399,16 +392,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             actions: [
                               TextButton(
                                 onPressed: () {
-                                  Navigator.of(context)
-                                      .pop(); // Close the dialog
+                                  Navigator.of(context).pop();
                                 },
                                 child: const Text('Cancel'),
                               ),
                               TextButton(
                                 onPressed: () async {
-                                  Navigator.of(context)
-                                      .pop(); // Close the dialog
-                                  await deleteAccount(); // Call the delete account function
+                                  Navigator.of(context).pop();
+                                  await deleteAccount();
                                 },
                                 child: const Text('Yes'),
                               ),
@@ -417,23 +408,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         );
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        padding:
-                            EdgeInsets.zero, // Remove default button padding
+                        backgroundColor: Colors.blue.shade700,
+                        padding: EdgeInsets.zero,
                         shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(9), // Rounded corners
+                          borderRadius: BorderRadius.circular(9),
                         ),
                       ),
                       child: SizedBox(
-                        width: 160, // Ensure sufficient width
-                        height: 50, // Ensure sufficient height
+                        width: 160,
+                        height: 50,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              vertical: 12,
-                              horizontal: 20), // Add padding around the text
+                              vertical: 12, horizontal: 20),
                           decoration: BoxDecoration(
-                            color: Colors.black,
+                            color: Colors.blue.shade700,
                             borderRadius: BorderRadius.circular(9),
                           ),
                           child: const Center(
@@ -442,7 +430,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 14.0, // Adjust font size as needed
+                                fontSize: 14.0,
                               ),
                             ),
                           ),
@@ -551,21 +539,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     });
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    padding: EdgeInsets.zero, // Remove default button padding
+                    backgroundColor: Colors.blue.shade700,
+                    padding: EdgeInsets.zero,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(9), // Rounded corners
+                      borderRadius: BorderRadius.circular(9),
                     ),
                   ),
                   child: SizedBox(
-                    width: 160, // Ensure sufficient width
-                    height: 50, // Ensure sufficient height
+                    width: 160,
+                    height: 50,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          vertical: 12,
-                          horizontal: 20), // Add padding around the text
+                          vertical: 12, horizontal: 20),
                       decoration: BoxDecoration(
-                        color: Colors.black,
+                        color: Colors.blue.shade700,
                         borderRadius: BorderRadius.circular(9),
                       ),
                       child: const Center(
@@ -574,7 +561,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
-                            fontSize: 14.0, // Adjust font size as needed
+                            fontSize: 14.0,
                           ),
                         ),
                       ),
