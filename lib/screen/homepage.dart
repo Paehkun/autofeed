@@ -376,6 +376,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
+                  // Logout icon on the left
                   Tooltip(
                     message: 'Logout',
                     child: IconButton(
@@ -413,6 +414,14 @@ class _HomeScreenState extends State<HomeScreen> {
                         );
                       },
                     ),
+                  ),
+
+                  Spacer(), // Push logo to the far right
+
+                  // Logo on the right
+                  Image.asset(
+                    'assets/images/logo1.png', // Update with your logo path
+                    height: 50, // Adjust as needed
                   ),
                 ],
               ),

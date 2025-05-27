@@ -178,12 +178,11 @@ class _RegisterState extends State<Register> {
           child: SingleChildScrollView(
             child: Column(
               children: [
-                // Logo
-                const Icon(
-                  Icons.lock,
-                  size: 80,
+                Image.asset(
+                  'assets/images/logo1.png',
+                  height: 120,
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 30),
 
                 // Welcome text
                 Text(

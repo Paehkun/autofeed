@@ -15,6 +15,9 @@ class AdminPage extends StatefulWidget {
 class _AdminPageState extends State<AdminPage> {
   final DatabaseReference usersRef = FirebaseDatabase.instance.ref('users');
   List<Map<String, dynamic>> userList = [];
+  List<Map<String, dynamic>> filteredList = [];
+  bool isLoading = true;
+  String searchQuery = '';
 
   @override
   void initState() {
@@ -23,6 +26,7 @@ class _AdminPageState extends State<AdminPage> {
   }
 
   Future<void> fetchUsers() async {
+    setState(() => isLoading = true);
     final snapshot = await usersRef.get();
 
     if (snapshot.exists && mounted) {
@@ -32,7 +36,6 @@ class _AdminPageState extends State<AdminPage> {
       for (final key in usersMap.keys) {
         final value = usersMap[key];
         if (value['role'] != 'admin') {
-          // Fetch device power
           final deviceSnapshot =
               await usersRef.child('$key/device/power').get();
           final bool isDeviceOn = deviceSnapshot.value == true;
@@ -43,27 +46,55 @@ class _AdminPageState extends State<AdminPage> {
             'email': value['email'] ?? 'No Email',
             'profileImageBase64': value['profileImageBase64'],
             'devicePower': isDeviceOn,
+            'role': value['role'] ?? 'user',
+            'active': value['active'] ?? true,
           });
         }
       }
 
-      if (mounted) {
-        setState(() {
-          userList = tempList;
-        });
-      }
+      // Sort online users on top
+      tempList.sort((a, b) {
+        if (a['devicePower'] && !b['devicePower']) return -1;
+        if (!a['devicePower'] && b['devicePower']) return 1;
+        return 0;
+      });
+
+      setState(() {
+        userList = tempList;
+        filteredList = tempList;
+        isLoading = false;
+      });
+    } else {
+      setState(() {
+        userList = [];
+        filteredList = [];
+        isLoading = false;
+      });
     }
+  }
+
+  void filterUsers(String query) {
+    List<Map<String, dynamic>> filtered = userList.where((user) {
+      final nameLower = user['name'].toLowerCase();
+      final emailLower = user['email'].toLowerCase();
+      final searchLower = query.toLowerCase();
+
+      return nameLower.contains(searchLower) ||
+          emailLower.contains(searchLower);
+    }).toList();
+
+    setState(() {
+      searchQuery = query;
+      filteredList = filtered;
+    });
   }
 
   void signUserOut(BuildContext context) async {
     try {
       await FirebaseAuth.instance.signOut();
-      // Navigate to the login screen after sign-out
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-            builder: (context) =>
-                const AuthPage()), // Replace with your login screen
+        MaterialPageRoute(builder: (context) => const AuthPage()),
       );
     } catch (e) {
       print("Error logging out: $e");
@@ -72,147 +103,241 @@ class _AdminPageState extends State<AdminPage> {
 
   @override
   Widget build(BuildContext context) {
+    final totalUsers = userList.length;
+    final onlineUsers = userList.where((user) => user['devicePower']).length;
+
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Top Row with Logout Button + Refresh
               Row(
                 children: [
                   IconButton(
+                    icon: const Icon(Icons.logout),
+                    tooltip: 'Logout',
                     onPressed: () {
-                      // Show confirmation dialog before logging out
                       showDialog(
                         context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            title: const Text('Confirm Logout'),
-                            content:
-                                const Text('Are you sure you want to log out?'),
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.of(context)
-                                      .pop(); // Close the dialog
-                                },
-                                child: const Text('No'),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  signUserOut(
-                                      context); // Call the sign out function
-                                  Navigator.of(context)
-                                      .pop(); // Close the dialog
-                                },
-                                child: const Text('Yes'),
-                              ),
-                            ],
-                          );
-                        },
+                        builder: (_) => AlertDialog(
+                          title: const Text('Confirm Logout'),
+                          content:
+                              const Text('Are you sure you want to log out?'),
+                          actions: [
+                            TextButton(
+                              child: const Text('Cancel'),
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                            TextButton(
+                              child: const Text('Logout'),
+                              onPressed: () {
+                                Navigator.pop(context);
+                                signUserOut(context);
+                              },
+                            ),
+                          ],
+                        ),
                       );
                     },
-                    icon: const Icon(Icons.logout),
                   ),
+                  IconButton(
+                    icon: const Icon(Icons.refresh),
+                    tooltip: 'Refresh Users',
+                    onPressed: fetchUsers,
+                  ),
+                  const Spacer(),
                 ],
               ),
+
+              const SizedBox(height: 10),
+
               const Text(
-                'Manage Users',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
+                'User Management',
+                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+              ),
+
+              const SizedBox(height: 8),
+
+              // User count summary
+              Text(
+                'Total users: $totalUsers | Online: $onlineUsers',
+                style: const TextStyle(color: Colors.grey, fontSize: 14),
+              ),
+
+              const SizedBox(height: 12),
+
+              // Search bar
+              TextField(
+                onChanged: filterUsers,
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.search),
+                  hintText: 'Search by name or email...',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  contentPadding:
+                      const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
                 ),
               ),
+
               const SizedBox(height: 20),
+
               Expanded(
-                child: userList.isEmpty
+                child: isLoading
                     ? const Center(child: CircularProgressIndicator())
-                    : ListView.builder(
-                        itemCount: userList.length,
-                        itemBuilder: (context, index) {
-                          final user = userList[index];
-                          return Card(
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                            elevation: 2,
-                            child: ListTile(
-                              leading: user['profileImageBase64'] != null
-                                  ? Container(
-                                      width: 100, // Set the desired width
-                                      height: 100, // Set the desired height
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        image: DecorationImage(
-                                          image: MemoryImage(base64Decode(
-                                              user['profileImageBase64'])),
-                                          fit: BoxFit
-                                              .cover, // Ensures the image is cropped or scaled to fit the container
-                                        ),
-                                      ),
-                                    )
-                                  : Container(
-                                      width: 100, // Set the desired width
-                                      height: 100, // Set the desired height
-                                      decoration: const BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: Colors
-                                            .grey, // Default background color
-                                      ),
-                                      child: const Icon(Icons.person),
-                                    ),
-                              title: Text(user['name']),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(user['email']),
-                                  Text(
-                                    'Device: ${user['devicePower'] == true ? "Online" : "Offline"}',
-                                    style: TextStyle(
-                                      color: user['devicePower'] == true
-                                          ? Colors.green
-                                          : Colors.red,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        UserDetailPage(uid: user['uid']),
-                                  ),
-                                );
-                              },
-                              trailing: PopupMenuButton<String>(
-                                onSelected: (value) {
-                                  if (value == 'delete') {
-                                    deleteUser(user['uid']);
-                                  }
-                                },
-                                itemBuilder: (context) => [
-                                  const PopupMenuItem(
-                                    value: 'delete',
-                                    child: Text('Delete'),
-                                  ),
-                                ],
-                              ),
+                    : filteredList.isEmpty
+                        ? Center(
+                            child: Text(
+                              searchQuery.isEmpty
+                                  ? 'No users found.'
+                                  : 'No users matching "$searchQuery".',
+                              style: const TextStyle(
+                                  fontSize: 16, color: Colors.grey),
                             ),
-                          );
-                        },
-                      ),
+                          )
+                        : ListView.builder(
+                            itemCount: filteredList.length,
+                            itemBuilder: (context, index) {
+                              final user = filteredList[index];
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: Colors.black12,
+                                      blurRadius: 6,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: ListTile(
+                                  contentPadding: const EdgeInsets.all(16),
+                                  leading: user['profileImageBase64'] != null
+                                      ? CircleAvatar(
+                                          radius: 30,
+                                          backgroundImage: MemoryImage(
+                                            base64Decode(
+                                                user['profileImageBase64']),
+                                          ),
+                                        )
+                                      : const CircleAvatar(
+                                          radius: 30,
+                                          backgroundColor: Colors.grey,
+                                          child: Icon(Icons.person,
+                                              color: Colors.white),
+                                        ),
+                                  title: Text(
+                                    user['name'],
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w600),
+                                  ),
+                                  subtitle: Padding(
+                                    padding: const EdgeInsets.only(top: 6),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(user['email']),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Role: ${user['role']}',
+                                          style: const TextStyle(
+                                              fontStyle: FontStyle.italic),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Device: ${user['devicePower'] ? "Online" : "Offline"}',
+                                          style: TextStyle(
+                                            color: user['devicePower']
+                                                ? Colors.green
+                                                : Colors.red,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.delete,
+                                            color: Colors.red),
+                                        tooltip: 'Delete User',
+                                        onPressed: () {
+                                          showDialog(
+                                            context: context,
+                                            builder: (_) => AlertDialog(
+                                              title: const Text('Delete User'),
+                                              content: Text(
+                                                  'Are you sure you want to delete user "${user['name']}"? This action cannot be undone.'),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () =>
+                                                      Navigator.pop(context),
+                                                  child: const Text('Cancel'),
+                                                ),
+                                                TextButton(
+                                                  onPressed: () async {
+                                                    Navigator.pop(context);
+                                                    try {
+                                                      await usersRef
+                                                          .child(user['uid'])
+                                                          .remove();
+                                                      setState(() {
+                                                        userList.removeWhere(
+                                                            (u) =>
+                                                                u['uid'] ==
+                                                                user['uid']);
+                                                        filteredList
+                                                            .removeWhere((u) =>
+                                                                u['uid'] ==
+                                                                user['uid']);
+                                                      });
+                                                    } catch (e) {
+                                                      ScaffoldMessenger.of(
+                                                              context)
+                                                          .showSnackBar(
+                                                        SnackBar(
+                                                            content: Text(
+                                                                'Failed to delete user: $e')),
+                                                      );
+                                                    }
+                                                  },
+                                                  child: const Text('Delete',
+                                                      style: TextStyle(
+                                                          color: Colors.red)),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            UserDetailPage(uid: user['uid']),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              );
+                            },
+                          ),
               ),
             ],
           ),
         ),
       ),
     );
-  }
-
-  Future<void> deleteUser(String uid) async {
-    await usersRef.child(uid).remove();
-    fetchUsers(); // Refresh the list
   }
 }

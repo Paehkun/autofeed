@@ -48,11 +48,14 @@ class _LoginState extends State<Login> {
 
         if (isAdmin) {
           print("Logging in as admin");
-          Navigator.pop(context); // Close loading
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const AdminPage()),
-          );
+          Navigator.pop(context); // Close loading dialog
+
+          Future.delayed(Duration(milliseconds: 100), () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const AdminPage()),
+            );
+          });
         } else if (!user.emailVerified) {
           print("Email not verified");
           Navigator.pop(context);
@@ -171,7 +174,10 @@ class _LoginState extends State<Login> {
           child: SingleChildScrollView(
             child: Column(
               children: [
-                const Icon(Icons.lock, size: 80),
+                Image.asset(
+                  'assets/images/logo1.png',
+                  height: 120,
+                ),
                 const SizedBox(height: 40),
                 Text(
                   'Welcome to AutoFeed',

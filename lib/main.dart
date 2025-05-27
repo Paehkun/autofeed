@@ -21,7 +21,7 @@ void main() async {
 
   // Initialize Awesome Notifications
   AwesomeNotifications().initialize(
-    null, // Let Android handle the default notification icon
+    'resource://drawable/ic_stat_ic_notification',
     [
       NotificationChannel(
         channelKey: 'basic_channel',
@@ -66,6 +66,7 @@ void main() async {
           title: notification.title,
           body: notification.body,
           notificationLayout: NotificationLayout.Default,
+          icon: 'resource://drawable/ic_stat_ic_notification',
         ),
       );
     }

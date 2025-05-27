@@ -150,7 +150,7 @@ class _ReportScreenState extends State<ReportScreen> {
     if (selectedFilter == "year") {
       return "${(total / 1000).toStringAsFixed(2)} kg";
     } else {
-      return "${total.toStringAsFixed(1)} grams";
+      return "${total.toInt()} grams";
     }
   }
 
@@ -252,14 +252,15 @@ class _ReportScreenState extends State<ReportScreen> {
                             sideTitles: SideTitles(
                               showTitles: true,
                               getTitlesWidget: (value, meta) {
-                                if (selectedFilter == "week") {
+                                if (selectedFilter == "week" ||
+                                    selectedFilter == "month") {
                                   return Text(
                                     '${value.toInt()} grams',
                                     style: const TextStyle(fontSize: 10),
                                   );
                                 } else {
                                   return Text(
-                                    '${value.toStringAsFixed(1)} g',
+                                    '${value.toStringAsFixed(1)} Kg',
                                     style: const TextStyle(fontSize: 10),
                                   );
                                 }
