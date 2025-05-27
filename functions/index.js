@@ -16,7 +16,7 @@ exports.sendLowFoodLevelNotification = onValueWritten(
 
       const message = {
         notification: {
-          title: 'Food Level Low ',
+          title: 'Food Level Low ⚠️',
           body: `Your fish food is at ${foodLevel}%.`,
         },
         topic: userId,
@@ -52,7 +52,7 @@ exports.sendFeedSuccessNotification = onValueWritten(
 
       const message = {
         notification: {
-          title: 'Feeding Successful 🐟',
+          title: 'Feeding Successful 🐟🦈',
           body: `Food was dispensed at ${lastFeedTime} today.`,
         },
         topic: userId,
