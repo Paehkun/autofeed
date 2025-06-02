@@ -170,7 +170,7 @@ class _HomeScreenState extends State<HomeScreen> {
     for (int i = 0; i < feedTimes.length; i++) {
       String timerId = 'timer${i + 1}';
 
-      await database.child("users/$userId/schedule/$timerId").set({
+      await database.child("schedule/$userId/$timerId").set({
         'day': days.join(", "),
         'time': feedTimes[i],
         'enabled': true,
@@ -180,7 +180,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // Delete unused timers (optional cleanup)
     for (int i = feedTimes.length + 1; i <= 5; i++) {
       String timerId = 'timer$i';
-      await database.child("users/$userId/schedule/$timerId").remove();
+      await database.child("schedule/$userId/$timerId").remove();
     }
   }
 
@@ -217,7 +217,7 @@ class _HomeScreenState extends State<HomeScreen> {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       DatabaseReference feedRef =
-          FirebaseDatabase.instance.ref('users/${user.uid}/device/status');
+          FirebaseDatabase.instance.ref('device/${user.uid}/status');
       DataSnapshot snapshot = await feedRef.get();
       if (snapshot.exists && mounted) {
         setState(() {
@@ -231,7 +231,7 @@ class _HomeScreenState extends State<HomeScreen> {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       DatabaseReference powerRef =
-          FirebaseDatabase.instance.ref('users/${user.uid}/device/power');
+          FirebaseDatabase.instance.ref('device/${user.uid}/power');
       DataSnapshot snapshot = await powerRef.get();
       if (snapshot.exists && mounted) {
         setState(() {
@@ -253,7 +253,7 @@ class _HomeScreenState extends State<HomeScreen> {
     debugPrint("Today: $today"); // Check the current day
 
     final scheduleRef =
-        FirebaseDatabase.instance.ref('users/${currentUser.uid}/schedule');
+        FirebaseDatabase.instance.ref('schedule/${currentUser.uid}');
 
     final snapshot = await scheduleRef.get();
 
@@ -310,7 +310,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (user != null) {
       //baca userID untuk store and fetch data
       DatabaseReference statusRef =
-          FirebaseDatabase.instance.ref('users/${user.uid}/device/status');
+          FirebaseDatabase.instance.ref('device/${user.uid}/status');
       try {
         // Toggle the current status value
         DataSnapshot snapshot = await statusRef.get();
@@ -333,7 +333,7 @@ class _HomeScreenState extends State<HomeScreen> {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       DatabaseReference powerRef =
-          FirebaseDatabase.instance.ref('users/${user.uid}/device/power');
+          FirebaseDatabase.instance.ref('device/${user.uid}/power');
       try {
         await powerRef
             .set(powerStatus); // Set the new power status in the database
@@ -353,7 +353,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (user != null) {
       //baca userID untuk store and fetch data
       DatabaseReference testref =
-          FirebaseDatabase.instance.ref('users/${user.uid}/foodLevel');
+          FirebaseDatabase.instance.ref('device/${user.uid}/foodlevel');
 
       //listen databse
       testref.onValue.listen(

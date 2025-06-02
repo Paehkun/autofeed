@@ -16,7 +16,7 @@ class AuthPage extends StatelessWidget {
     }
 
     // Fetch role from Realtime Database
-    final ref = FirebaseDatabase.instance.ref('users/${user.uid}');
+    final ref = FirebaseDatabase.instance.ref('admin/${user.uid}');
     final snapshot = await ref.child('role').get();
 
     final role = snapshot.value.toString();

@@ -35,7 +35,7 @@ class _FeedTimerPageState extends State<FeedTimerPage> {
     if (_currentUser == null) return;
 
     final snapshot =
-        await _database.child("users/${_currentUser.uid}/schedule").once();
+        await _database.child("schedule/${_currentUser.uid}").once();
     final data = snapshot.snapshot.value as Map?;
 
     _feedTimes.clear();
@@ -135,9 +135,7 @@ class _FeedTimerPageState extends State<FeedTimerPage> {
     String scheduleId = 'timer$timerNumber';
 
     // Save to Firebase
-    await _database
-        .child("users/${_currentUser.uid}/schedule/$scheduleId")
-        .set({
+    await _database.child("schedule/${_currentUser.uid}/$scheduleId").set({
       'day': _feedTimes[index]['days'].join(", "),
       'time': _feedTimes[index]['time'],
       'enabled': _feedTimes[index]['enabled'],
@@ -154,9 +152,7 @@ class _FeedTimerPageState extends State<FeedTimerPage> {
 
     if (scheduleId == null || scheduleId.isEmpty) return; // Extra safety
 
-    await _database
-        .child("users/${_currentUser.uid}/schedule/$scheduleId")
-        .update({
+    await _database.child("schedule/${_currentUser.uid}/$scheduleId").update({
       'day': _feedTimes[index]['days'].join(", "),
       'time': _feedTimes[index]['time'],
       'enabled': _feedTimes[index]['enabled'],
@@ -171,9 +167,7 @@ class _FeedTimerPageState extends State<FeedTimerPage> {
     if (scheduleId == null || scheduleId.isEmpty) return; // Prevent null crash
 
     // Remove the schedule data from Firebase
-    await _database
-        .child("users/${_currentUser.uid}/schedule/$scheduleId")
-        .remove();
+    await _database.child("schedule/${_currentUser.uid}/$scheduleId").remove();
 
     if (!mounted) return;
 

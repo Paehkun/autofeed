@@ -41,24 +41,12 @@ class _LoginState extends State<Login> {
 
       if (user != null) {
         final userEmail = user.email?.toLowerCase();
-        final isAdmin = userEmail == adminEmail.toLowerCase();
 
         if (!mounted) return;
         Navigator.pop(context); // Close loading dialog
 
-        if (isAdmin) {
-          print("Logging in as admin");
-          Navigator.pop(context); // Close loading dialog
-
-          Future.delayed(const Duration(milliseconds: 100), () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const AdminPage()),
-            );
-          });
-        } else if (!user.emailVerified) {
+        if (!user.emailVerified) {
           print("Email not verified");
-          Navigator.pop(context);
           await user.sendEmailVerification();
 
           showDialog(
@@ -79,44 +67,46 @@ class _LoginState extends State<Login> {
             },
           );
           await FirebaseAuth.instance.signOut();
-        } else {
-          print("Checking user role in database...");
-          DatabaseReference userRef =
-              FirebaseDatabase.instance.ref('users/${user.uid}');
-          DataSnapshot snapshot = await userRef.get();
-
-          Navigator.pop(context); // Close loading
-
-          if (snapshot.exists) {
-            String role = snapshot.child('role').value.toString();
-            print("User role: $role");
-
-            if (role == 'admin') {
-              Navigator.pop(context);
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const AdminPage()),
-              );
-            } else {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const HomePage()),
-              );
-            }
-          } else {
-            print("User role not found.");
-            showDialog(
-              context: context,
-              builder: (context) {
-                return const AlertDialog(
-                  title: Text('Error'),
-                  content: Text('User role not found.'),
-                );
-              },
-            );
-            await FirebaseAuth.instance.signOut();
-          }
+          return;
         }
+
+        print("Checking admin database...");
+        final adminRef = FirebaseDatabase.instance.ref('admins/${user.uid}');
+        final adminSnapshot = await adminRef.get();
+
+        if (adminSnapshot.exists) {
+          print("Admin found in admins DB");
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const AdminPage()),
+          );
+          return;
+        }
+
+        print("Checking users database...");
+        final userRef = FirebaseDatabase.instance.ref('users/${user.uid}');
+        final userSnapshot = await userRef.get();
+
+        if (userSnapshot.exists) {
+          print("User found in users DB");
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const HomePage()),
+          );
+          return;
+        }
+
+        print("User not found in either DB");
+        showDialog(
+          context: context,
+          builder: (context) {
+            return const AlertDialog(
+              title: Text('Error'),
+              content: Text('Account not found in system database.'),
+            );
+          },
+        );
+        await FirebaseAuth.instance.signOut();
       }
     } on FirebaseAuthException catch (e) {
       Navigator.pop(context);
