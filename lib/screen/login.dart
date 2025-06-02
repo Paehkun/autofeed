@@ -50,7 +50,7 @@ class _LoginState extends State<Login> {
           print("Logging in as admin");
           Navigator.pop(context); // Close loading dialog
 
-          Future.delayed(Duration(milliseconds: 100), () {
+          Future.delayed(const Duration(milliseconds: 100), () {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => const AdminPage()),

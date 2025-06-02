@@ -416,7 +416,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
 
-                  Spacer(), // Push logo to the far right
+                  const Spacer(), // Push logo to the far right
 
                   // Logo on the right
                   Image.asset(

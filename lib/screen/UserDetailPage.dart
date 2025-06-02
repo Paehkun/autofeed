@@ -57,8 +57,8 @@ class _UserDetailPageState extends State<UserDetailPage> {
           )
         : const CircleAvatar(
             radius: 70,
-            child: Icon(Icons.person, size: 60, color: Colors.grey),
             backgroundColor: Colors.black12,
+            child: Icon(Icons.person, size: 60, color: Colors.grey),
           );
 
     return Scaffold(
