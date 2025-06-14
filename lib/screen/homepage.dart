@@ -353,7 +353,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (user != null) {
       //baca userID untuk store and fetch data
       DatabaseReference testref =
-          FirebaseDatabase.instance.ref('device/${user.uid}/foodlevel');
+          FirebaseDatabase.instance.ref('device/${user.uid}/foodLevel');
 
       //listen databse
       testref.onValue.listen(

@@ -6,7 +6,7 @@ const moment = require('moment-timezone');
 exports.sendLowFoodLevelNotification = onValueWritten(
   {
     region: 'asia-southeast1', //
-    ref: '/users/{userId}/foodLevel',
+    ref: 'device/{userId}/foodlevel',
   },
   async (event) => {
     const foodLevel = parseFloat(event.data.after.val());

@@ -3,6 +3,27 @@ import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+/// ===== Helper Functions for Date Range =====
+DateTime getStartOfWeek(DateTime date) {
+  int diff = date.weekday - DateTime.monday;
+  return DateTime(date.year, date.month, date.day)
+      .subtract(Duration(days: diff));
+}
+
+DateTime getEndOfWeek(DateTime date) {
+  int diff = DateTime.sunday - date.weekday;
+  return DateTime(date.year, date.month, date.day).add(Duration(days: diff));
+}
+
+bool isWithinThisWeek(DateTime entryDate) {
+  final now = DateTime.now().add(const Duration(hours: 8)); // Malaysia time
+  final startOfWeek = getStartOfWeek(now);
+  final endOfWeek = getEndOfWeek(now);
+
+  return entryDate.isAfter(startOfWeek.subtract(const Duration(seconds: 1))) &&
+      entryDate.isBefore(endOfWeek.add(const Duration(days: 1)));
+}
+
 class ReportScreen extends StatefulWidget {
   const ReportScreen({super.key});
 
@@ -59,9 +80,7 @@ class _ReportScreenState extends State<ReportScreen> {
             tempMonthlyUsage[month] += foodUsed;
 
             // Weekly usage (only if within current week)
-            if (feedDate.isAfter(
-                    startOfWeek.subtract(const Duration(seconds: 1))) &&
-                feedDate.isBefore(endOfWeek.add(const Duration(days: 1)))) {
+            if (isWithinThisWeek(feedDate)) {
               tempWeeklyUsage[weekday] += foodUsed;
             }
           }
@@ -179,7 +198,6 @@ class _ReportScreenState extends State<ReportScreen> {
       backgroundColor: const Color(0xFFF5F7FA),
       body: SafeArea(
         child: SingleChildScrollView(
-          // Wrap the content inside the scroll view
           child: Container(
             color: const Color(0xFFF5F7FA),
             child: Column(

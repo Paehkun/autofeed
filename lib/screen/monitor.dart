@@ -13,6 +13,7 @@ class Monitor extends StatefulWidget {
 
 class _MonitorState extends State<Monitor> {
   List<String> feedingLog = [];
+  String streamUrl = "";
 
   @override
   void initState() {
@@ -20,16 +21,29 @@ class _MonitorState extends State<Monitor> {
 
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
+      final uid = user.uid;
+
+      // Load the stream URL from Firebase RTDB
+      DatabaseReference streamRef =
+          FirebaseDatabase.instance.ref('device/$uid/stream_link');
+      streamRef.onValue.listen((event) {
+        final url = event.snapshot.value;
+        if (url != null) {
+          setState(() {
+            streamUrl = url.toString();
+          });
+        }
+      });
+
+      // Load the feeding log
       final now = DateTime.now().add(const Duration(hours: 8));
       final todayDate = DateFormat('yyyy-MM-dd').format(now);
       DatabaseReference feedRef = FirebaseDatabase.instance
-          .ref('users/${user.uid}/feedingLog/success/$todayDate');
+          .ref('users/$uid/feedingLog/success/$todayDate');
 
-      // Listen for feeding log updates
       feedRef.onValue.listen((event) {
         final data = event.snapshot.value;
         if (data is List) {
-          // Clean out nulls if any
           List<String> times = data.whereType<String>().toList();
           setState(() {
             feedingLog = times;
@@ -59,7 +73,7 @@ class _MonitorState extends State<Monitor> {
             ),
             const SizedBox(height: 25),
 
-            // Camera Stream - Original Size (400 x 340)
+            // Camera Stream
             Container(
               width: 400,
               height: 340,
@@ -76,14 +90,16 @@ class _MonitorState extends State<Monitor> {
                   ),
                 ],
               ),
-              child: Transform.rotate(
-                angle: 3.1416, // 180 degrees
-                child: const Mjpeg(
-                  stream: 'http://192.168.216.21/stream',
-                  isLive: true,
-                  fit: BoxFit.cover,
-                ),
-              ),
+              child: streamUrl.isEmpty
+                  ? const Center(child: CircularProgressIndicator())
+                  : Transform.rotate(
+                      angle: 3.1416, // 180 degrees
+                      child: Mjpeg(
+                        stream: streamUrl,
+                        isLive: true,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
             ),
 
             const SizedBox(height: 25),
