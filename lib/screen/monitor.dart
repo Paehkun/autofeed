@@ -53,6 +53,36 @@ class _MonitorState extends State<Monitor> {
     }
   }
 
+  void refreshStream() {
+    print("Refresh button pressed");
+
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final uid = user.uid;
+
+      DatabaseReference streamRef =
+          FirebaseDatabase.instance.ref('device/$uid/stream_link');
+
+      streamRef.once().then((event) {
+        final url = event.snapshot.value;
+        print("Fetched stream URL: $url"); // Debug log
+        if (url != null) {
+          setState(() {
+            streamUrl = url.toString();
+          });
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No stream URL found')),
+          );
+        }
+      }).catchError((error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $error')),
+        );
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -75,32 +105,62 @@ class _MonitorState extends State<Monitor> {
 
             // Camera Stream
             Container(
-              width: 400,
-              height: 340,
-              decoration: BoxDecoration(
-                color: Colors.black,
-                borderRadius: BorderRadius.circular(25),
-                border: Border.all(color: Colors.grey.shade400, width: 4),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    spreadRadius: 10,
-                    blurRadius: 10,
-                    offset: const Offset(3, 5),
-                  ),
-                ],
-              ),
-              child: streamUrl.isEmpty
-                  ? const Center(child: CircularProgressIndicator())
-                  : Transform.rotate(
-                      angle: 3.1416, // 180 degrees
-                      child: Mjpeg(
-                        stream: streamUrl,
-                        isLive: true,
-                        fit: BoxFit.cover,
-                      ),
+                width: 400,
+                height: 340,
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(25),
+                  border: Border.all(color: Colors.grey.shade400, width: 4),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      spreadRadius: 10,
+                      blurRadius: 10,
+                      offset: const Offset(3, 5),
                     ),
-            ),
+                  ],
+                ),
+                child: streamUrl.isEmpty
+                    ? Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const CircularProgressIndicator(),
+                          const SizedBox(height: 10),
+                          const Text("Stream not available"),
+                          const SizedBox(height: 10),
+                          ElevatedButton.icon(
+                            onPressed: refreshStream,
+                            icon: const Icon(Icons.refresh),
+                            label: const Text("Refresh Stream"),
+                          ),
+                        ],
+                      )
+                    : Transform.rotate(
+                        angle: 3.1416,
+                        child: Mjpeg(
+                          stream: streamUrl,
+                          isLive: true,
+                          fit: BoxFit.cover,
+                          error: (context, error, stack) => Center(
+                            child: Transform.rotate(
+                              angle: 3.1416, // Flip the error UI upright
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.error, color: Colors.red),
+                                  const SizedBox(height: 10),
+                                  const Text("Stream failed to load"),
+                                  ElevatedButton.icon(
+                                    onPressed: refreshStream,
+                                    icon: const Icon(Icons.refresh),
+                                    label: const Text("Retry"),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      )),
 
             const SizedBox(height: 25),
 
