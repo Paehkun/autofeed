@@ -160,6 +160,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> _deleteProfilePicture() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final uid = user.uid;
+    final dbRef = FirebaseDatabase.instance.ref().child('users/$uid');
+
+    try {
+      await dbRef.update({
+        'profileImageBase64': '',
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Profile picture deleted.")),
+      );
+
+      setState(() {}); // Refresh UI
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error deleting image: ${e.toString()}")),
+      );
+    }
+  }
+
   // Function to delete user account
   Future<void> deleteAccount() async {
     User? currentUser = FirebaseAuth.instance.currentUser;
@@ -257,16 +281,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: CircleAvatar(
                 radius: 60.0,
                 backgroundColor: Colors.grey[400],
-                backgroundImage: profileImageBase64 != null
+                backgroundImage: (profileImageBase64 != null &&
+                        profileImageBase64!.isNotEmpty)
                     ? MemoryImage(base64Decode(profileImageBase64!))
                     : null,
-                child: profileImageBase64 == null
-                    ? const Icon(
-                        Icons.person,
-                        size: 50.0,
-                        color: Colors.white,
-                      )
-                    : null,
+                child:
+                    (profileImageBase64 == null || profileImageBase64!.isEmpty)
+                        ? const Icon(
+                            Icons.person,
+                            size: 50.0,
+                            color: Colors.white,
+                          )
+                        : null,
               ),
             ),
           ),
@@ -441,7 +467,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ],
             )
-          else
+          else if (!isEditing)
             const SizedBox(height: 5.0),
           if (!isEditing)
             Divider(
@@ -553,7 +579,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           vertical: 12, horizontal: 20),
                       decoration: BoxDecoration(
                         color: Colors.blue.shade700,
-                        borderRadius: BorderRadius.circular(9),
+                        borderRadius: BorderRadius.circular(9), //
                       ),
                       child: const Center(
                         child: Text(
@@ -569,6 +595,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
               const SizedBox(height: 20.0),
+              Align(
+                alignment: Alignment.center,
+                child: GestureDetector(
+                  onTap: _deleteProfilePicture,
+                  child: Container(
+                    width: 160,
+                    height: 45,
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade700,
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'Remove Profile Picture',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14.0,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ],
