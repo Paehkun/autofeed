@@ -70,7 +70,7 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/images/logo1.png" # Your custom app icon path
+  image_path: "assets/images/logo.png" # Your custom app icon path
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

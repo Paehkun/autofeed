@@ -173,7 +173,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Profile picture deleted.")),
+        const SnackBar(content: Text("Profile picture deleted.")),
       );
 
       setState(() {}); // Refresh UI

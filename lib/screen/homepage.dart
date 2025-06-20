@@ -420,7 +420,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   // Logo on the right
                   Image.asset(
-                    'assets/images/logo1.png', // Update with your logo path
+                    'assets/images/logo.png', // Update with your logo path
                     height: 50, // Adjust as needed
                   ),
                 ],
