@@ -88,7 +88,7 @@ The project follows the **Clean Architecture** principles to ensure a strict sep
 
     flutter run
 
-📁 Repository Structure
+## 📁 Repository Structure
 Plaintext
 
 lib/
