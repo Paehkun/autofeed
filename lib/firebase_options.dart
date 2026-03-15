@@ -46,6 +46,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '82288421129',
     projectId: 'auth-autofeed',
     authDomain: 'auth-autofeed.firebaseapp.com',
+    databaseURL: 'https://auth-autofeed-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'auth-autofeed.firebasestorage.app',
   );
 
@@ -54,6 +55,7 @@ class DefaultFirebaseOptions {
     appId: '1:82288421129:android:afd9d2d0dfd11ad77d0bd8',
     messagingSenderId: '82288421129',
     projectId: 'auth-autofeed',
+    databaseURL: 'https://auth-autofeed-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'auth-autofeed.firebasestorage.app',
   );
 
@@ -62,6 +64,7 @@ class DefaultFirebaseOptions {
     appId: '1:82288421129:ios:fe09e79116553f767d0bd8',
     messagingSenderId: '82288421129',
     projectId: 'auth-autofeed',
+    databaseURL: 'https://auth-autofeed-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'auth-autofeed.firebasestorage.app',
     iosBundleId: 'com.example.autoTest',
   );
@@ -71,6 +74,7 @@ class DefaultFirebaseOptions {
     appId: '1:82288421129:ios:fe09e79116553f767d0bd8',
     messagingSenderId: '82288421129',
     projectId: 'auth-autofeed',
+    databaseURL: 'https://auth-autofeed-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'auth-autofeed.firebasestorage.app',
     iosBundleId: 'com.example.autoTest',
   );
@@ -81,6 +85,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '82288421129',
     projectId: 'auth-autofeed',
     authDomain: 'auth-autofeed.firebaseapp.com',
+    databaseURL: 'https://auth-autofeed-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'auth-autofeed.firebasestorage.app',
   );
+
 }

@@ -64,28 +64,28 @@ class _ReportScreenState extends State<ReportScreen> {
       DateTime endOfWeek = startOfWeek.add(const Duration(days: 6));
 
       logs.forEach((key, value) {
-        if (value != null &&
-            value['food_dispensed'] != null &&
-            value['time'] != null) {
-          double foodUsed = (value['food_dispensed'] is int)
-              ? (value['food_dispensed'] as int).toDouble()
-              : value['food_dispensed'];
+  if (value != null && value['food_dispensed'] != null && value['time'] != null) {
+    double foodUsed = (value['food_dispensed'] is int)
+        ? (value['food_dispensed'] as int).toDouble()
+        : value['food_dispensed'];
 
-          if (foodUsed > 0) {
-            DateTime feedDate = DateTime.parse(value['time']);
-            int month = feedDate.month - 1;
-            int weekday = feedDate.weekday - 1;
+    if (foodUsed > 0) {
+      DateTime feedDate = DateTime.parse(value['time']);
+      DateTime now = DateTime.now(); // Ambil masa sekarang (2026)
 
-            // Monthly usage (no change)
-            tempMonthlyUsage[month] += foodUsed;
+      if (feedDate.year == now.year) {
+        int month = feedDate.month - 1;
+        tempMonthlyUsage[month] += foodUsed;
+      }
 
-            // Weekly usage (only if within current week)
-            if (isWithinThisWeek(feedDate)) {
-              tempWeeklyUsage[weekday] += foodUsed;
-            }
-          }
-        }
-      });
+      // Weekly usage sedia ada (isWithinThisWeek dah ada check range yang betul)
+      int weekday = feedDate.weekday - 1;
+      if (isWithinThisWeek(feedDate)) {
+        tempWeeklyUsage[weekday] += foodUsed;
+      }
+    }
+  }
+});
 
       setState(() {
         monthlyUsage = tempMonthlyUsage;
@@ -253,8 +253,8 @@ class _ReportScreenState extends State<ReportScreen> {
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.1), // Shadow color
-                        spreadRadius: 10, // Spread of the shadow
-                        blurRadius: 10, // How much the shadow is blurred
+                        spreadRadius: 10, 
+                        blurRadius: 10, 
                         offset:
                             const Offset(3, 5), // Position of the shadow (x, y)
                       ),
@@ -297,7 +297,6 @@ class _ReportScreenState extends State<ReportScreen> {
 
                                 Widget buildLabel(String text) {
                                   if (index == 0) {
-                                    // Add extra left padding to the first label
                                     return Padding(
                                       padding: const EdgeInsets.only(
                                           left: 8.0), // adjust 8.0 as needed
