@@ -25,8 +25,7 @@
 | :--- | :--- |
 | **Mobile Framework** | Flutter |
 | **Backend / Cloud** | Firebase (Auth, RTDB, FCM) |
-| **State Management** | BLoC & Provider |
-| **Hardware** | ESP32 / ESP8266 & IoT Sensors |
+| **Hardware** | ESP32 & IoT Sensors |
 | **Design Pattern** | Clean Architecture (Domain-Driven Design) |
 
 ---
@@ -51,27 +50,43 @@ The project follows the **Clean Architecture** principles to ensure a strict sep
 > [!IMPORTANT]
 > Sensitive configuration files (like `.env` and `firebase_options.dart`) are excluded for security.
 
-### 1. Configure Environment Variables
-Create a `.env` file in the root folder:
-```env
-FIREBASE_API_KEY=your_api_key
-FIREBASE_APP_ID=your_app_id
-FIREBASE_MESSAGING_SENDER_ID=your_id
-FIREBASE_PROJECT_ID=your_project_id
-FIREBASE_DATABASE_URL=your_db_url
 
-### 2. Initialize Firebase
-Ensure you have the FlutterFire CLI installed:
+1. **Clone the repository:**
+   ```bash
+   git clone [https://github.com/Paehkun/auto_test.git](https://github.com/Paehkun/auto_test.git)
 
-```Bash
+2. **Navigate to the project folder:**
 
-flutterfire configure
+   ```bash
 
-### 3. Build & Run
-```Bash
+    cd auto_test
 
-flutter pub get
-flutter run
+3. **Configure Environment Variables: Create a .env file in the root folder and add your Firebase credentials:**
+   ```bash
+
+    FIREBASE_API_KEY=your_api_key
+    FIREBASE_APP_ID=your_app_id
+    FIREBASE_MESSAGING_SENDER_ID=your_id
+    FIREBASE_PROJECT_ID=your_project_id
+    FIREBASE_DATABASE_URL=your_db_url
+
+4. **Initialize Firebase: Ensure you have the FlutterFire CLI installed:**
+
+   ```bash
+
+    flutterfire configure
+
+5. **Install dependencies:**
+
+   ```bash
+
+    flutter pub get
+
+6. **Build & Run:**
+
+   ```bash
+
+    flutter run
 
 📁 Repository Structure
 Plaintext
