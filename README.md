@@ -59,3 +59,26 @@ FIREBASE_APP_ID=your_app_id
 FIREBASE_MESSAGING_SENDER_ID=your_id
 FIREBASE_PROJECT_ID=your_project_id
 FIREBASE_DATABASE_URL=your_db_url
+
+### 2. Initialize Firebase
+Ensure you have the FlutterFire CLI installed:
+
+Bash
+
+flutterfire configure
+
+### 3. Build & Run
+Bash
+
+flutter pub get
+flutter run
+
+📁 Repository Structure
+Plaintext
+
+lib/
+├── core/          # Shared utilities, themes, and navigation
+├── data/          # Firebase API, models, and repository implementations
+├── domain/        # Pure business logic (Entities & Use Cases)
+├── presentation/  # UI components (Screens, Widgets, BLoCs)
+└── main.dart      # Bootstrap & entry point
