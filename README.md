@@ -39,7 +39,7 @@
 
 The project follows the **Clean Architecture** principles to ensure a strict separation of concerns:
 
-- **Presentation Layer**: UI logic and state management using BLoC.
+- **Presentation Layer**: UI logic and state management.
 - **Domain Layer**: Business rules, entities, and use cases (the "Heart" of the app).
 - **Data Layer**: Repository implementations and data sources (Firebase integration).
 
