@@ -89,11 +89,11 @@ The project follows the **Clean Architecture** principles to ensure a strict sep
     flutter run
 
 ## 📁 Repository Structure
-Plaintext
+```Plaintext
 
 lib/
 ├── core/          # Shared utilities, themes, and navigation
 ├── data/          # Firebase API, models, and repository implementations
 ├── domain/        # Pure business logic (Entities & Use Cases)
-├── presentation/  # UI components (Screens, Widgets, BLoCs)
+├── presentation/  # UI components (Screens & Widgets)
 └── main.dart      # Bootstrap & entry point
