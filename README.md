@@ -63,12 +63,12 @@ FIREBASE_DATABASE_URL=your_db_url
 ### 2. Initialize Firebase
 Ensure you have the FlutterFire CLI installed:
 
-Bash
+```Bash
 
 flutterfire configure
 
 ### 3. Build & Run
-Bash
+```Bash
 
 flutter pub get
 flutter run
