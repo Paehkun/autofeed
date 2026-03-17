@@ -49,6 +49,7 @@ The project follows the **Clean Architecture** principles to ensure a strict sep
 
 > [!IMPORTANT]
 > Sensitive configuration files (like `.env` and `firebase_options.dart`) are excluded for security.
+>Note: For security reasons, the google-services.json file is not included. Please add your own Firebase configuration file to run this project.
 
 
 1. **Clone the repository:**

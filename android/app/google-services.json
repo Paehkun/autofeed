@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "82288421129",
+    "firebase_url": "https://auth-autofeed-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "auth-autofeed",
+    "storage_bucket": "auth-autofeed.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:82288421129:android:afd9d2d0dfd11ad77d0bd8",
+        "android_client_info": {
+          "package_name": "com.example.autofeed"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDVYlD2YitXeh5DuB5GwAet2-q-_zpDEHA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:82288421129:android:3d4e8be1143837897d0bd8",
+        "android_client_info": {
+          "package_name": "com.faizrosdin.autofeed"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDVYlD2YitXeh5DuB5GwAet2-q-_zpDEHA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
