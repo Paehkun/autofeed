@@ -1,4 +1,4 @@
-# AutoFeed: Smart IoT Fish Feeding System 🐟
+# AutoFeed: Smart IoT Fish Feeding System 
 
 [![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=for-the-badge&logo=Flutter&logoColor=white)](https://flutter.dev/)
 [![Firebase](https://img.shields.io/badge/firebase-%23039BE5.svg?style=for-the-badge&logo=firebase)](https://firebase.google.com/)
@@ -9,17 +9,17 @@
 
 ---
 
-## 🌟 Key Features
+##  Key Features
 
-- 📊 **Real-time Monitoring** – Track food storage levels and system health in real-time.
-- 🎮 **Remote Manual Feed** – Trigger the feeding mechanism (Servo/Motor) instantly with a single tap.
-- 🔔 **Intelligent Alerts** – Stay updated with critical notifications via **Firebase Cloud Messaging (FCM)**.
-- 🔐 **Secure Access** – Identity management and data protection powered by **Firebase Authentication**.
-- 🏗️ **Professional Architecture** – Built using **Clean Architecture** for high scalability and testability.
+-  **Real-time Monitoring** – Track food storage levels and system health in real-time.
+-  **Remote Manual Feed** – Trigger the feeding mechanism (Servo/Motor) instantly with a single tap.
+-  **Intelligent Alerts** – Stay updated with critical notifications via **Firebase Cloud Messaging (FCM)**.
+-  **Secure Access** – Identity management and data protection powered by **Firebase Authentication**.
+-  **Professional Architecture** – Built using **Clean Architecture** for high scalability and testability.
 
 ---
 
-## 🛠️ Technology Stack
+##  Technology Stack
 
 | Category | Technology |
 | :--- | :--- |
@@ -30,12 +30,12 @@
 
 ---
 
-## 🏆 Awards & Recognition
+##  Awards & Recognition
 - **Silver Award** – *Research and Innovation Symposium & Exposition (RISE 2025)*.
 
 ---
 
-## 📐 System Architecture
+##  System Architecture
 
 The project follows the **Clean Architecture** principles to ensure a strict separation of concerns:
 
@@ -45,7 +45,7 @@ The project follows the **Clean Architecture** principles to ensure a strict sep
 
 ---
 
-## ⚙️ Installation & Setup
+##  Installation & Setup
 
 > [!IMPORTANT]
 > Sensitive configuration files (like `.env` and `firebase_options.dart`) are excluded for security.
@@ -89,7 +89,7 @@ The project follows the **Clean Architecture** principles to ensure a strict sep
 
     flutter run
 
-## 📁 Repository Structure
+##  Repository Structure
 ```Plaintext
 
 lib/
